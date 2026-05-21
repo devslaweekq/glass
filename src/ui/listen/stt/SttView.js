@@ -119,7 +119,7 @@ export class SttView extends LitElement {
         const container = this.shadowRoot.querySelector('.transcription-container');
         this._shouldScrollAfterUpdate = container ? container.scrollTop + container.clientHeight >= container.scrollHeight - 10 : false;
 
-        const findLastPartialIdx = spk => {
+        const findLastPartialIdx = (spk) => {
             for (let i = this.sttMessages.length - 1; i >= 0; i--) {
                 const m = this.sttMessages[i];
                 if (m.speaker === spk && m.isPartial) return i;
@@ -167,12 +167,14 @@ export class SttView extends LitElement {
         }
 
         this.sttMessages = newMessages;
-        
+
         // Notify parent component about message updates
-        this.dispatchEvent(new CustomEvent('stt-messages-updated', {
-            detail: { messages: this.sttMessages },
-            bubbles: true
-        }));
+        this.dispatchEvent(
+            new CustomEvent('stt-messages-updated', {
+                detail: { messages: this.sttMessages },
+                bubbles: true,
+            }),
+        );
     }
 
     scrollToBottom() {
@@ -189,7 +191,7 @@ export class SttView extends LitElement {
     }
 
     getTranscriptText() {
-        return this.sttMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n');
+        return this.sttMessages.map((msg) => `${msg.speaker}: ${msg.text}`).join('\n');
     }
 
     updated(changedProperties) {
@@ -212,15 +214,10 @@ export class SttView extends LitElement {
             <div class="transcription-container">
                 ${this.sttMessages.length === 0
                     ? html`<div class="empty-state">Waiting for speech...</div>`
-                    : this.sttMessages.map(msg => html`
-                        <div class="stt-message ${this.getSpeakerClass(msg.speaker)}">
-                            ${msg.text}
-                        </div>
-                    `)
-                }
+                    : this.sttMessages.map((msg) => html` <div class="stt-message ${this.getSpeakerClass(msg.speaker)}">${msg.text}</div> `)}
             </div>
         `;
     }
 }
 
-customElements.define('stt-view', SttView); 
+customElements.define('stt-view', SttView);

@@ -323,7 +323,6 @@ export class ApiKeyHeader extends LitElement {
         }
     `;
 
-
     constructor() {
         super();
         this.isLoading = false;
@@ -605,7 +604,7 @@ export class ApiKeyHeader extends LitElement {
                 this.retryCount++;
 
                 // Use proper Promise-based delay instead of setTimeout
-                await new Promise(resolve => {
+                await new Promise((resolve) => {
                     const retryTimeoutId = setTimeout(() => {
                         this._initializeOllamaConnection();
                         resolve();
@@ -625,7 +624,9 @@ export class ApiKeyHeader extends LitElement {
     }
 
     _cancelAllActiveOperations() {
-        console.log(`[ApiKeyHeader] Cancelling ${this.activeOperations.size} active operations and ${this.operationQueue.length} queued operations`);
+        console.log(
+            `[ApiKeyHeader] Cancelling ${this.activeOperations.size} active operations and ${this.operationQueue.length} queued operations`,
+        );
 
         // Cancel active operations
         for (const [operationType, operation] of this.activeOperations) {
@@ -670,7 +671,7 @@ export class ApiKeyHeader extends LitElement {
         if (metrics.successRate < 70 && this.maxConcurrentOperations > 1) {
             this.maxConcurrentOperations = Math.max(1, this.maxConcurrentOperations - 1);
             console.log(
-                `[ApiKeyHeader] Reduced max concurrent operations to ${this.maxConcurrentOperations} (success rate: ${metrics.successRate.toFixed(1)}%)`
+                `[ApiKeyHeader] Reduced max concurrent operations to ${this.maxConcurrentOperations} (success rate: ${metrics.successRate.toFixed(1)}%)`,
             );
         }
 
@@ -725,7 +726,7 @@ export class ApiKeyHeader extends LitElement {
                     const result = await window.api.apiKeyHeader.getOllamaStatus();
                     return result?.success && result?.running;
                 },
-                { timeout: 5000, priority: 'low' }
+                { timeout: 5000, priority: 'low' },
             );
 
             if (isHealthy) {
@@ -805,7 +806,7 @@ export class ApiKeyHeader extends LitElement {
             this.messageTimestamp = Date.now();
 
             // Auto-select Whisper if available
-            const whisperProvider = this.providers.stt.find(p => p.id === 'whisper');
+            const whisperProvider = this.providers.stt.find((p) => p.id === 'whisper');
             if (whisperProvider) {
                 this.sttProvider = 'whisper';
                 console.log('[ApiKeyHeader] Auto-selected Whisper for STT');
@@ -937,7 +938,7 @@ export class ApiKeyHeader extends LitElement {
                 queuedOp.id,
                 queuedOp.type,
                 queuedOp.operation,
-                queuedOp.options.timeout || this.ipcTimeout
+                queuedOp.options.timeout || this.ipcTimeout,
             );
             queuedOp.resolve(result);
         } catch (error) {
@@ -1039,7 +1040,7 @@ export class ApiKeyHeader extends LitElement {
 
                 // 기본 모델 선택 (설치된 모델 중 첫 번째)
                 if (!this.selectedLlmModel && this.modelSuggestions.length > 0) {
-                    const installedModel = this.modelSuggestions.find(m => m.status === 'installed');
+                    const installedModel = this.modelSuggestions.find((m) => m.status === 'installed');
                     if (installedModel) {
                         this.selectedLlmModel = installedModel.name;
                     }
@@ -1064,7 +1065,7 @@ export class ApiKeyHeader extends LitElement {
                 async () => {
                     return await window.api.apiKeyHeader.ensureOllamaReady();
                 },
-                { timeout: this.operationTimeout }
+                { timeout: this.operationTimeout },
             );
 
             if (result?.success) {
@@ -1094,7 +1095,7 @@ export class ApiKeyHeader extends LitElement {
         const progressHandler = (event, data) => {
             // 통합 LocalAI 이벤트에서 Ollama 진행률만 처리
             if (data.service !== 'ollama') return;
-            
+
             let baseProgress = 0;
             let stageTotal = 0;
 
@@ -1248,7 +1249,7 @@ export class ApiKeyHeader extends LitElement {
         if (!modelName || !modelName.trim()) return;
 
         // Remove if already exists (to move to front)
-        this.userModelHistory = this.userModelHistory.filter(m => m !== modelName);
+        this.userModelHistory = this.userModelHistory.filter((m) => m !== modelName);
 
         // Add to front
         this.userModelHistory.unshift(modelName);
@@ -1278,7 +1279,7 @@ export class ApiKeyHeader extends LitElement {
         }
 
         // Add user history models that aren't already installed
-        const installedNames = this.modelSuggestions.map(m => m.name);
+        const installedNames = this.modelSuggestions.map((m) => m.name);
         for (const modelName of this.userModelHistory) {
             if (!installedNames.includes(modelName)) {
                 combined.push({
@@ -1327,7 +1328,9 @@ export class ApiKeyHeader extends LitElement {
 
             // Execute the model pull with timeout
             const installPromise = window.api.apiKeyHeader.pullOllamaModel(modelName);
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Installation timeout after 10 minutes')), 600000));
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Installation timeout after 10 minutes')), 600000),
+            );
 
             const result = await Promise.race([installPromise, timeoutPromise]);
 
@@ -1337,7 +1340,7 @@ export class ApiKeyHeader extends LitElement {
                 this.requestUpdate();
 
                 // Brief pause to show completion
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise((resolve) => setTimeout(resolve, 300));
 
                 // Refresh status and show success
                 await this.refreshOllamaStatus();
@@ -1503,7 +1506,7 @@ export class ApiKeyHeader extends LitElement {
                 }
 
                 // Check if model is installed, if not install it
-                const selectedModel = this.getCombinedModelSuggestions().find(m => m.name === this.selectedLlmModel);
+                const selectedModel = this.getCombinedModelSuggestions().find((m) => m.name === this.selectedLlmModel);
                 if (!selectedModel || selectedModel.status !== 'installed') {
                     console.log(`[ApiKeyHeader] Installing model ${this.selectedLlmModel}...`);
                     await this.installModel(this.selectedLlmModel);
@@ -1589,12 +1592,12 @@ export class ApiKeyHeader extends LitElement {
 
             if (llmResult.success && sttResult.success) {
                 console.log('[ApiKeyHeader] handleSubmit: Validation successful.');
-                
+
                 // Force refresh the model state to ensure areProvidersConfigured returns true
                 setTimeout(async () => {
                     const isConfigured = await window.api.apiKeyHeader.areProvidersConfigured();
                     console.log('[ApiKeyHeader] Post-validation providers configured check:', isConfigured);
-                    
+
                     if (isConfigured) {
                         this.startSlideOutAnimation();
                     } else {
@@ -1621,12 +1624,11 @@ export class ApiKeyHeader extends LitElement {
     }
     //////// after_modelStateService ////////
 
-
     ////TODO: 뭔가 넘어가는 애니메이션 로직에 문제가 있음
     startSlideOutAnimation() {
         console.log('[ApiKeyHeader] startSlideOutAnimation: Starting slide out animation.');
         this.classList.add('sliding-out');
-        
+
         // Fallback: if animation doesn't trigger animationend event, force transition
         setTimeout(() => {
             if (this.classList.contains('sliding-out')) {
@@ -1662,11 +1664,11 @@ export class ApiKeyHeader extends LitElement {
 
         window.api.common
             .getCurrentUser()
-            .then(userState => {
+            .then((userState) => {
                 console.log('[ApiKeyHeader] handleAnimationEnd: User state retrieved:', userState);
 
                 // Additional validation for local providers
-                return window.api.apiKeyHeader.areProvidersConfigured().then(isConfigured => {
+                return window.api.apiKeyHeader.areProvidersConfigured().then((isConfigured) => {
                     console.log('[ApiKeyHeader] handleAnimationEnd: Providers configured check:', isConfigured);
 
                     if (!isConfigured) {
@@ -1677,7 +1679,7 @@ export class ApiKeyHeader extends LitElement {
                     this.stateUpdateCallback(userState);
                 });
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('[ApiKeyHeader] handleAnimationEnd: Error during state transition:', error);
 
                 // Fallback: try to call callback with minimal state
@@ -1738,7 +1740,7 @@ export class ApiKeyHeader extends LitElement {
         const downloadingModels = Object.keys(this.whisperInstallingModels);
         if (downloadingModels.length > 0) {
             console.log(`[ApiKeyHeader] Cancelling ${downloadingModels.length} ongoing Whisper downloads`);
-            downloadingModels.forEach(modelId => {
+            downloadingModels.forEach((modelId) => {
                 delete this.whisperInstallingModels[modelId];
             });
         }
@@ -1803,7 +1805,9 @@ export class ApiKeyHeader extends LitElement {
         return html`
             <div style="margin-top: 3px; display: flex; align-items: center; gap: 6px;">
                 <div style="height: 1px; background: rgba(255,255,255,0.3); border-radius: 0.5px; overflow: hidden; flex: 1;">
-                    <div style="height: 100%; background: rgba(0,122,255,1); width: ${this.installProgress}%; transition: width 0.1s ease;"></div>
+                    <div
+                        style="height: 100%; background: rgba(0,122,255,1); width: ${this.installProgress}%; transition: width 0.1s ease;"
+                    ></div>
                 </div>
                 <div style="font-size: 8px; color: rgba(255,255,255,0.8); font-weight: 600; min-width: 24px; text-align: right;">
                     ${this.installProgress}%
@@ -1836,11 +1840,12 @@ export class ApiKeyHeader extends LitElement {
             />
             <datalist id="model-suggestions">
                 ${this.getCombinedModelSuggestions().map(
-                    model => html`
+                    (model) => html`
                         <option value=${model.name}>
-                            ${model.name} ${model.status === 'installed' ? '✓ Installed' : model.status === 'history' ? '📝 Recent' : '- Available'}
+                            ${model.name}
+                            ${model.status === 'installed' ? '✓ Installed' : model.status === 'history' ? '📝 Recent' : '- Available'}
                         </option>
-                    `
+                    `,
                 )}
             </datalist>
 
@@ -1851,7 +1856,8 @@ export class ApiKeyHeader extends LitElement {
                       <div style="margin-top: 3px; display: flex; align-items: center; gap: 6px;">
                           <div style="height: 1px; background: rgba(255,255,255,0.3); border-radius: 0.5px; overflow: hidden; flex: 1;">
                               <div
-                                  style="height: 100%; background: rgba(0,122,255,1); width: ${this.installProgress}%; transition: width 0.1s ease;"
+                                  style="height: 100%; background: rgba(0,122,255,1); width: ${this
+                                      .installProgress}%; transition: width 0.1s ease;"
                               ></div>
                           </div>
                           <div style="font-size: 8px; color: rgba(255,255,255,0.8); font-weight: 600; min-width: 24px; text-align: right;">
@@ -1933,7 +1939,7 @@ export class ApiKeyHeader extends LitElement {
             (llmNeedsModel && !this.selectedLlmModel?.trim()) ||
             (sttNeedsModel && !this.selectedSttModel);
 
-        const llmProviderName = this.providers.llm.find(p => p.id === this.llmProvider)?.name || this.llmProvider;
+        const llmProviderName = this.providers.llm.find((p) => p.id === this.llmProvider)?.name || this.llmProvider;
 
         return html`
             <div class="container">
@@ -1952,15 +1958,15 @@ export class ApiKeyHeader extends LitElement {
                         <div class="label">1. Select LLM Provider</div>
                         <div class="provider-selector">
                             ${this.providers.llm.map(
-                                p => html`
+                                (p) => html`
                                     <button
                                         class="provider-button"
                                         data-status=${this.llmProvider === p.id ? 'active' : 'default'}
-                                        @click=${e => this.handleLlmProviderChange(e, p.id)}
+                                        @click=${(e) => this.handleLlmProviderChange(e, p.id)}
                                     >
                                         ${p.name}
                                     </button>
-                                `
+                                `,
                             )}
                         </div>
                     </div>
@@ -1975,7 +1981,7 @@ export class ApiKeyHeader extends LitElement {
                                           class="api-input ${this.llmError ? 'invalid' : ''}"
                                           placeholder="Enter your ${llmProviderName} API key"
                                           .value=${this.llmApiKey}
-                                          @input=${e => {
+                                          @input=${(e) => {
                                               this.llmApiKey = e.target.value;
                                               this.llmError = '';
                                           }}
@@ -1993,15 +1999,15 @@ export class ApiKeyHeader extends LitElement {
                         <div class="label">3. Select STT Provider</div>
                         <div class="provider-selector">
                             ${this.providers.stt.map(
-                                p => html`
+                                (p) => html`
                                     <button
                                         class="provider-button"
                                         data-status=${this.sttProvider === p.id ? 'active' : 'default'}
-                                        @click=${e => this.handleSttProviderChange(e, p.id)}
+                                        @click=${(e) => this.handleSttProviderChange(e, p.id)}
                                     >
                                         ${p.name}
                                     </button>
-                                `
+                                `,
                             )}
                         </div>
                     </div>
@@ -2019,7 +2025,7 @@ export class ApiKeyHeader extends LitElement {
                                         <select
                                             class="api-input ${this.sttError ? 'invalid' : ''}"
                                             .value=${this.selectedSttModel || ''}
-                                            @change=${e => {
+                                            @change=${(e) => {
                                                 this.handleSttModelChange(e);
                                                 this.sttError = '';
                                             }}
@@ -2031,7 +2037,7 @@ export class ApiKeyHeader extends LitElement {
                                                 { id: 'whisper-base', name: 'Whisper Base (74M)' },
                                                 { id: 'whisper-small', name: 'Whisper Small (244M)' },
                                                 { id: 'whisper-medium', name: 'Whisper Medium (769M)' },
-                                            ].map(model => html` <option value="${model.id}">${model.name}</option> `)}
+                                            ].map((model) => html` <option value="${model.id}">${model.name}</option> `)}
                                         </select>
                                         ${this.sttError ? html`<div class="inline-error-message">${this.sttError}</div>` : ''}
                                     </div>
@@ -2043,7 +2049,7 @@ export class ApiKeyHeader extends LitElement {
                                             class="api-input ${this.sttError ? 'invalid' : ''}"
                                             placeholder="Enter your STT API key"
                                             .value=${this.sttApiKey}
-                                            @input=${e => {
+                                            @input=${(e) => {
                                                 this.sttApiKey = e.target.value;
                                                 this.sttError = '';
                                             }}
@@ -2073,7 +2079,10 @@ export class ApiKeyHeader extends LitElement {
                     <span class="footer-link" @click=${this.openPrivacyPolicy}>See details</span>
                 </div>
 
-                <div class="error-message ${this.shouldFadeMessage('error') ? 'message-fade-out' : ''}" @animationend=${this.handleMessageFadeEnd}>
+                <div
+                    class="error-message ${this.shouldFadeMessage('error') ? 'message-fade-out' : ''}"
+                    @animationend=${this.handleMessageFadeEnd}
+                >
                     ${this.errorMessage}
                 </div>
                 <div

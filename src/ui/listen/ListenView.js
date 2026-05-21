@@ -9,7 +9,9 @@ export class ListenView extends LitElement {
             width: 400px;
             transform: translate3d(0, 0, 0);
             backface-visibility: hidden;
-            transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s ease-out;
+            transition:
+                transform 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+                opacity 0.2s ease-out;
             will-change: transform, opacity;
         }
 
@@ -27,94 +29,101 @@ export class ListenView extends LitElement {
             pointer-events: none;
         }
 
-
         * {
-            font-family: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family:
+                'Helvetica Neue',
+                -apple-system,
+                BlinkMacSystemFont,
+                'Segoe UI',
+                Roboto,
+                sans-serif;
             cursor: default;
             user-select: none;
         }
 
-/* Allow text selection in insights responses */
-.insights-container, .insights-container *, .markdown-content {
-    user-select: text !important;
-    cursor: text !important;
-}
+        /* Allow text selection in insights responses */
+        .insights-container,
+        .insights-container *,
+        .markdown-content {
+            user-select: text !important;
+            cursor: text !important;
+        }
 
-/* highlight.js 스타일 추가 */
-.insights-container pre {
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 8px !important;
-    padding: 12px !important;
-    margin: 8px 0 !important;
-    overflow-x: auto !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    white-space: pre !important;
-    word-wrap: normal !important;
-    word-break: normal !important;
-}
+        /* highlight.js 스타일 추가 */
+        .insights-container pre {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            margin: 8px 0 !important;
+            overflow-x: auto !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            white-space: pre !important;
+            word-wrap: normal !important;
+            word-break: normal !important;
+        }
 
-.insights-container code {
-    font-family: 'Monaco', 'Menlo', 'Consolas', monospace !important;
-    font-size: 11px !important;
-    background: transparent !important;
-    white-space: pre !important;
-    word-wrap: normal !important;
-    word-break: normal !important;
-}
+        .insights-container code {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace !important;
+            font-size: 11px !important;
+            background: transparent !important;
+            white-space: pre !important;
+            word-wrap: normal !important;
+            word-break: normal !important;
+        }
 
-.insights-container pre code {
-    white-space: pre !important;
-    word-wrap: normal !important;
-    word-break: normal !important;
-    display: block !important;
-}
+        .insights-container pre code {
+            white-space: pre !important;
+            word-wrap: normal !important;
+            word-break: normal !important;
+            display: block !important;
+        }
 
-.insights-container p code {
-    background: rgba(255, 255, 255, 0.1) !important;
-    padding: 2px 4px !important;
-    border-radius: 3px !important;
-    color: #ffd700 !important;
-}
+        .insights-container p code {
+            background: rgba(255, 255, 255, 0.1) !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
+            color: #ffd700 !important;
+        }
 
-.hljs-keyword {
-    color: #ff79c6 !important;
-}
+        .hljs-keyword {
+            color: #ff79c6 !important;
+        }
 
-.hljs-string {
-    color: #f1fa8c !important;
-}
+        .hljs-string {
+            color: #f1fa8c !important;
+        }
 
-.hljs-comment {
-    color: #6272a4 !important;
-}
+        .hljs-comment {
+            color: #6272a4 !important;
+        }
 
-.hljs-number {
-    color: #bd93f9 !important;
-}
+        .hljs-number {
+            color: #bd93f9 !important;
+        }
 
-.hljs-function {
-    color: #50fa7b !important;
-}
+        .hljs-function {
+            color: #50fa7b !important;
+        }
 
-.hljs-title {
-    color: #50fa7b !important;
-}
+        .hljs-title {
+            color: #50fa7b !important;
+        }
 
-.hljs-variable {
-    color: #8be9fd !important;
-}
+        .hljs-variable {
+            color: #8be9fd !important;
+        }
 
-.hljs-built_in {
-    color: #ffb86c !important;
-}
+        .hljs-built_in {
+            color: #ffb86c !important;
+        }
 
-.hljs-attr {
-    color: #50fa7b !important;
-}
+        .hljs-attr {
+            color: #50fa7b !important;
+        }
 
-.hljs-tag {
-    color: #ff79c6 !important;
-}
+        .hljs-tag {
+            color: #ff79c6 !important;
+        }
         .assistant-container {
             display: flex;
             flex-direction: column;
@@ -138,7 +147,9 @@ export class ListenView extends LitElement {
             border-radius: 12px;
             padding: 1px;
             background: linear-gradient(169deg, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.17) 100%);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
             -webkit-mask-composite: destination-out;
             mask-composite: exclude;
             pointer-events: none;
@@ -265,7 +276,9 @@ export class ListenView extends LitElement {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            transition:
+                opacity 0.2s ease-in-out,
+                transform 0.2s ease-in-out;
         }
 
         .copy-button .check-icon {
@@ -288,7 +301,7 @@ export class ListenView extends LitElement {
             font-size: 10px;
             color: rgba(255, 255, 255, 0.7);
         }
-        
+
         /* ────────────────[ GLASS BYPASS ]─────────────── */
         :host-context(body.has-glass) .assistant-container,
         :host-context(body.has-glass) .top-bar,
@@ -351,7 +364,7 @@ export class ListenView extends LitElement {
         :host-context(body.has-glass) ::-webkit-scrollbar-track,
         :host-context(body.has-glass) ::-webkit-scrollbar-thumb {
             background: transparent !important;
-            width: 0 !important;      /* 스크롤바 자체 숨기기 */
+            width: 0 !important; /* 스크롤바 자체 숨기기 */
         }
         :host-context(body.has-glass) .assistant-container,
         :host-context(body.has-glass) .top-bar,
@@ -518,9 +531,8 @@ export class ListenView extends LitElement {
         this.updateComplete
             .then(() => {
                 const topBar = this.shadowRoot.querySelector('.top-bar');
-                const activeContent = this.viewMode === 'transcript'
-                    ? this.shadowRoot.querySelector('stt-view')
-                    : this.shadowRoot.querySelector('summary-view');
+                const activeContent =
+                    this.viewMode === 'transcript' ? this.shadowRoot.querySelector('stt-view') : this.shadowRoot.querySelector('summary-view');
 
                 if (!topBar || !activeContent) return;
 
@@ -533,12 +545,12 @@ export class ListenView extends LitElement {
                 const targetHeight = Math.min(700, idealHeight);
 
                 console.log(
-                    `[Height Adjusted] Mode: ${this.viewMode}, TopBar: ${topBarHeight}px, Content: ${contentHeight}px, Ideal: ${idealHeight}px, Target: ${targetHeight}px`
+                    `[Height Adjusted] Mode: ${this.viewMode}, TopBar: ${topBarHeight}px, Content: ${contentHeight}px, Ideal: ${idealHeight}px, Target: ${targetHeight}px`,
                 );
 
                 window.api.listenView.adjustWindowHeight('listen', targetHeight);
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('Error in adjustWindowHeight:', error);
             });
     }
@@ -629,8 +641,8 @@ export class ListenView extends LitElement {
                 ? 'Copy Transcript'
                 : 'Copy Glass Analysis'
             : this.viewMode === 'insights'
-            ? `Live insights`
-            : `Glass is Listening ${this.elapsedTime}`;
+              ? `Live insights`
+              : `Glass is Listening ${this.elapsedTime}`;
 
         return html`
             <div class="assistant-container">
@@ -666,22 +678,24 @@ export class ListenView extends LitElement {
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                 <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                             </svg>
-                            <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <svg
+                                class="check-icon"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                            >
                                 <path d="M20 6L9 17l-5-5" />
                             </svg>
                         </button>
                     </div>
                 </div>
 
-                <stt-view 
-                    .isVisible=${this.viewMode === 'transcript'}
-                    @stt-messages-updated=${this.handleSttMessagesUpdated}
-                ></stt-view>
+                <stt-view .isVisible=${this.viewMode === 'transcript'} @stt-messages-updated=${this.handleSttMessagesUpdated}></stt-view>
 
-                <summary-view 
-                    .isVisible=${this.viewMode === 'insights'}
-                    .hasCompletedRecording=${this.hasCompletedRecording}
-                ></summary-view>
+                <summary-view .isVisible=${this.viewMode === 'insights'} .hasCompletedRecording=${this.hasCompletedRecording}></summary-view>
             </div>
         `;
     }

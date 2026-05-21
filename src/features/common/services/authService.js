@@ -87,12 +87,10 @@ class AuthService {
                             await global.modelStateService.setFirebaseVirtualKey(virtualKey);
                         }
                         console.log(`[AuthService] Virtual key for ${user.email} has been processed and state updated.`);
-
                     } catch (error) {
                         console.error('[AuthService] Failed to fetch or save virtual key:', error);
                         // This is not critical enough to halt the login, but we should log it.
                     }
-
                 } else {
                     // User signed OUT
                     console.log(`[AuthService] No Firebase user.`);
@@ -113,7 +111,7 @@ class AuthService {
                     encryptionService.resetSessionKey();
                 }
                 this.broadcastUserState();
-                
+
                 if (!this.isInitialized) {
                     this.isInitialized = true;
                     console.log('[AuthService] Initialized and resolved initialization promise.');
@@ -164,11 +162,11 @@ class AuthService {
             console.error('[AuthService] Error signing out:', error);
         }
     }
-    
+
     broadcastUserState() {
         const userState = this.getCurrentUser();
         console.log('[AuthService] Broadcasting user state change:', userState);
-        BrowserWindow.getAllWindows().forEach(win => {
+        BrowserWindow.getAllWindows().forEach((win) => {
             if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
                 win.webContents.send('user-state-changed', userState);
             }
@@ -208,4 +206,4 @@ class AuthService {
 }
 
 const authService = new AuthService();
-module.exports = authService; 
+module.exports = authService;

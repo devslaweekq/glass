@@ -32,11 +32,14 @@ function createEncryptedConverter(fieldsToEncrypt = []) {
             const appObject = { ...firestoreData, id: snapshot.id }; // include the document ID
 
             for (const field of fieldsToEncrypt) {
-                 if (Object.prototype.hasOwnProperty.call(appObject, field) && appObject[field] != null) {
+                if (Object.prototype.hasOwnProperty.call(appObject, field) && appObject[field] != null) {
                     try {
                         appObject[field] = encryptionService.decrypt(appObject[field]);
                     } catch (error) {
-                        console.warn(`[FirestoreConverter] Failed to decrypt field '${field}' (possibly plaintext or key mismatch):`, error.message);
+                        console.warn(
+                            `[FirestoreConverter] Failed to decrypt field '${field}' (possibly plaintext or key mismatch):`,
+                            error.message,
+                        );
                         // Keep the original value instead of failing
                         // appObject[field] remains as is
                     }
@@ -49,12 +52,12 @@ function createEncryptedConverter(fieldsToEncrypt = []) {
                     appObject[key] = appObject[key].seconds;
                 }
             }
-            
+
             return appObject;
-        }
+        },
     };
 }
 
 module.exports = {
     createEncryptedConverter,
-}; 
+};

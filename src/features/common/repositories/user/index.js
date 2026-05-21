@@ -27,13 +27,11 @@ const userRepositoryAdapter = {
         // This function receives the full user object, which includes the uid. No need to inject.
         return getBaseRepository().findOrCreate(user);
     },
-    
+
     getById: () => {
         const uid = getAuthService().getCurrentUserId();
         return getBaseRepository().getById(uid);
     },
-
-
 
     update: (updateData) => {
         const uid = getAuthService().getCurrentUserId();
@@ -43,9 +41,9 @@ const userRepositoryAdapter = {
     deleteById: () => {
         const uid = getAuthService().getCurrentUserId();
         return getBaseRepository().deleteById(uid);
-    }
+    },
 };
 
 module.exports = {
-    ...userRepositoryAdapter
-}; 
+    ...userRepositoryAdapter,
+};

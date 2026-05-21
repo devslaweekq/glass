@@ -378,7 +378,7 @@ export class SummaryView extends LitElement {
         }
 
         const markdownElements = this.shadowRoot.querySelectorAll('[data-markdown-id]');
-        markdownElements.forEach(element => {
+        markdownElements.forEach((element) => {
             const originalText = element.getAttribute('data-original-text');
             if (originalText) {
                 try {
@@ -426,19 +426,19 @@ export class SummaryView extends LitElement {
         let sections = [];
 
         if (data.summary && data.summary.length > 0) {
-            sections.push(`Current Summary:\n${data.summary.map(s => `• ${s}`).join('\n')}`);
+            sections.push(`Current Summary:\n${data.summary.map((s) => `• ${s}`).join('\n')}`);
         }
 
         if (data.topic && data.topic.header && data.topic.bullets.length > 0) {
-            sections.push(`\n${data.topic.header}:\n${data.topic.bullets.map(b => `• ${b}`).join('\n')}`);
+            sections.push(`\n${data.topic.header}:\n${data.topic.bullets.map((b) => `• ${b}`).join('\n')}`);
         }
 
         if (data.actions && data.actions.length > 0) {
-            sections.push(`\nActions:\n${data.actions.map(a => `▸ ${a}`).join('\n')}`);
+            sections.push(`\nActions:\n${data.actions.map((a) => `▸ ${a}`).join('\n')}`);
         }
 
         if (data.followUps && data.followUps.length > 0) {
-            sections.push(`\nFollow-Ups:\n${data.followUps.map(f => `▸ ${f}`).join('\n')}`);
+            sections.push(`\nFollow-Ups:\n${data.followUps.map((f) => `▸ ${f}`).join('\n')}`);
         }
 
         return sections.join('\n\n').trim();
@@ -467,82 +467,82 @@ export class SummaryView extends LitElement {
                 ${!hasAnyContent
                     ? html`<div class="empty-state">No insights yet...</div>`
                     : html`
-                        <insights-title>Current Summary</insights-title>
-                        ${data.summary.length > 0
-                            ? data.summary
-                                  .slice(0, 5)
-                                  .map(
-                                      (bullet, index) => html`
-                                          <div
-                                              class="markdown-content"
-                                              data-markdown-id="summary-${index}"
-                                              data-original-text="${bullet}"
-                                              @click=${() => this.handleMarkdownClick(bullet)}
-                                          >
-                                              ${bullet}
-                                          </div>
-                                      `
-                                  )
-                            : html` <div class="request-item">No content yet...</div> `}
-                        ${data.topic.header
-                            ? html`
-                                  <insights-title>${data.topic.header}</insights-title>
-                                  ${data.topic.bullets
-                                      .slice(0, 3)
-                                      .map(
-                                          (bullet, index) => html`
-                                              <div
-                                                  class="markdown-content"
-                                                  data-markdown-id="topic-${index}"
-                                                  data-original-text="${bullet}"
-                                                  @click=${() => this.handleMarkdownClick(bullet)}
-                                              >
-                                                  ${bullet}
-                                              </div>
-                                          `
-                                      )}
-                              `
-                            : ''}
-                        ${data.actions.length > 0
-                            ? html`
-                                  <insights-title>Actions</insights-title>
-                                  ${data.actions
-                                      .slice(0, 5)
-                                      .map(
-                                          (action, index) => html`
-                                              <div
-                                                  class="markdown-content"
-                                                  data-markdown-id="action-${index}"
-                                                  data-original-text="${action}"
-                                                  @click=${() => this.handleMarkdownClick(action)}
-                                              >
-                                                  ${action}
-                                              </div>
-                                          `
-                                      )}
-                              `
-                            : ''}
-                        ${this.hasCompletedRecording && data.followUps && data.followUps.length > 0
-                            ? html`
-                                  <insights-title>Follow-Ups</insights-title>
-                                  ${data.followUps.map(
-                                      (followUp, index) => html`
-                                          <div
-                                              class="markdown-content"
-                                              data-markdown-id="followup-${index}"
-                                              data-original-text="${followUp}"
-                                              @click=${() => this.handleMarkdownClick(followUp)}
-                                          >
-                                              ${followUp}
-                                          </div>
-                                      `
-                                  )}
-                              `
-                            : ''}
-                    `}
+                          <insights-title>Current Summary</insights-title>
+                          ${data.summary.length > 0
+                              ? data.summary
+                                    .slice(0, 5)
+                                    .map(
+                                        (bullet, index) => html`
+                                            <div
+                                                class="markdown-content"
+                                                data-markdown-id="summary-${index}"
+                                                data-original-text="${bullet}"
+                                                @click=${() => this.handleMarkdownClick(bullet)}
+                                            >
+                                                ${bullet}
+                                            </div>
+                                        `,
+                                    )
+                              : html` <div class="request-item">No content yet...</div> `}
+                          ${data.topic.header
+                              ? html`
+                                    <insights-title>${data.topic.header}</insights-title>
+                                    ${data.topic.bullets
+                                        .slice(0, 3)
+                                        .map(
+                                            (bullet, index) => html`
+                                                <div
+                                                    class="markdown-content"
+                                                    data-markdown-id="topic-${index}"
+                                                    data-original-text="${bullet}"
+                                                    @click=${() => this.handleMarkdownClick(bullet)}
+                                                >
+                                                    ${bullet}
+                                                </div>
+                                            `,
+                                        )}
+                                `
+                              : ''}
+                          ${data.actions.length > 0
+                              ? html`
+                                    <insights-title>Actions</insights-title>
+                                    ${data.actions
+                                        .slice(0, 5)
+                                        .map(
+                                            (action, index) => html`
+                                                <div
+                                                    class="markdown-content"
+                                                    data-markdown-id="action-${index}"
+                                                    data-original-text="${action}"
+                                                    @click=${() => this.handleMarkdownClick(action)}
+                                                >
+                                                    ${action}
+                                                </div>
+                                            `,
+                                        )}
+                                `
+                              : ''}
+                          ${this.hasCompletedRecording && data.followUps && data.followUps.length > 0
+                              ? html`
+                                    <insights-title>Follow-Ups</insights-title>
+                                    ${data.followUps.map(
+                                        (followUp, index) => html`
+                                            <div
+                                                class="markdown-content"
+                                                data-markdown-id="followup-${index}"
+                                                data-original-text="${followUp}"
+                                                @click=${() => this.handleMarkdownClick(followUp)}
+                                            >
+                                                ${followUp}
+                                            </div>
+                                        `,
+                                    )}
+                                `
+                              : ''}
+                      `}
             </div>
         `;
     }
 }
 
-customElements.define('summary-view', SummaryView); 
+customElements.define('summary-view', SummaryView);

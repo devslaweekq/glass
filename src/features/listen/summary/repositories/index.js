@@ -17,7 +17,7 @@ const summaryRepositoryAdapter = {
     },
     getSummaryBySessionId: (sessionId) => {
         return getBaseRepository().getSummaryBySessionId(sessionId);
-    }
+    },
 };
 
-module.exports = summaryRepositoryAdapter; 
+module.exports = summaryRepositoryAdapter;

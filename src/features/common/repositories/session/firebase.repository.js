@@ -1,4 +1,17 @@
-const { doc, getDoc, collection, addDoc, query, where, getDocs, writeBatch, orderBy, limit, updateDoc, Timestamp } = require('firebase/firestore');
+const {
+    doc,
+    getDoc,
+    collection,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    writeBatch,
+    orderBy,
+    limit,
+    updateDoc,
+    Timestamp,
+} = require('firebase/firestore');
 const { getFirestoreInstance } = require('../../services/firebaseClient');
 const { createEncryptedConverter } = require('../firestoreConverter');
 const encryptionService = require('../../services/encryptionService');
@@ -18,7 +31,7 @@ function subCollections(sessionId) {
         transcripts: collection(db, `${sessionPath}/transcripts`),
         ai_messages: collection(db, `${sessionPath}/ai_messages`),
         summary: collection(db, `${sessionPath}/summary`),
-    }
+    };
 }
 
 async function getById(id) {
@@ -46,14 +59,14 @@ async function create(uid, type = 'ask') {
 async function getAllByUserId(uid) {
     const q = query(sessionsCol(), where('members', 'array-contains', uid), orderBy('started_at', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data());
+    return querySnapshot.docs.map((doc) => doc.data());
 }
 
 async function updateTitle(id, title) {
     const docRef = doc(sessionsCol(), id);
     await updateDoc(docRef, {
         title: encryptionService.encrypt(title),
-        updated_at: Timestamp.now()
+        updated_at: Timestamp.now(),
     });
     return { changes: 1 };
 }
@@ -68,10 +81,10 @@ async function deleteWithRelatedData(id) {
         getDocs(query(ai_messages)),
         getDocs(query(summary)),
     ]);
-    
-    transcriptsSnap.forEach(d => batch.delete(d.ref));
-    aiMessagesSnap.forEach(d => batch.delete(d.ref));
-    summarySnap.forEach(d => batch.delete(d.ref));
+
+    transcriptsSnap.forEach((d) => batch.delete(d.ref));
+    aiMessagesSnap.forEach((d) => batch.delete(d.ref));
+    summarySnap.forEach((d) => batch.delete(d.ref));
 
     const sessionRef = doc(sessionsCol(), id);
     batch.delete(sessionRef);
@@ -99,29 +112,23 @@ async function touch(id) {
 }
 
 async function getOrCreateActive(uid, requestedType = 'ask') {
-    const findQuery = query(
-        sessionsCol(),
-        where('uid', '==', uid),
-        where('ended_at', '==', null),
-        orderBy('session_type', 'desc'),
-        limit(1)
-    );
+    const findQuery = query(sessionsCol(), where('uid', '==', uid), where('ended_at', '==', null), orderBy('session_type', 'desc'), limit(1));
 
     const activeSessionSnap = await getDocs(findQuery);
-    
+
     if (!activeSessionSnap.empty) {
         const activeSessionDoc = activeSessionSnap.docs[0];
         const sessionRef = doc(sessionsCol(), activeSessionDoc.id);
         const activeSession = activeSessionDoc.data();
 
         console.log(`[Repo] Found active Firebase session ${activeSession.id}`);
-        
+
         const updates = { updated_at: Timestamp.now() };
         if (activeSession.session_type === 'ask' && requestedType === 'listen') {
             updates.session_type = 'listen';
             console.log(`[Repo] Promoted Firebase session ${activeSession.id} to 'listen' type.`);
         }
-        
+
         await updateDoc(sessionRef, updates);
         return activeSessionDoc.id;
     } else {
@@ -138,7 +145,7 @@ async function endAllActiveSessions(uid) {
 
     const batch = writeBatch(getFirestoreInstance());
     const now = Timestamp.now();
-    snapshot.forEach(d => {
+    snapshot.forEach((d) => {
         batch.update(d.ref, { ended_at: now });
     });
     await batch.commit();
@@ -158,4 +165,4 @@ module.exports = {
     touch,
     getOrCreateActive,
     endAllActiveSessions,
-}; 
+};

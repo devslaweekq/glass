@@ -80,7 +80,7 @@ const useAnimationStyles = (isCollapsed: boolean) => {
             opacity: isCollapsed ? 0 : 1,
             pointerEvents: isCollapsed ? 'none' : 'auto',
         }),
-        [isCollapsed]
+        [isCollapsed],
     );
 
     const getSubmenuAnimationStyle = useCallback(
@@ -90,7 +90,7 @@ const useAnimationStyles = (isCollapsed: boolean) => {
             maxHeight: isCollapsed || !isExpanded ? '0px' : '400px',
             opacity: isCollapsed || !isExpanded ? 0 : 1,
         }),
-        [isCollapsed]
+        [isCollapsed],
     );
 
     const sidebarContainerStyle: React.CSSProperties = useMemo(
@@ -98,7 +98,7 @@ const useAnimationStyles = (isCollapsed: boolean) => {
             willChange: 'width',
             transition: `width ${ANIMATION_DURATION.SIDEBAR}ms cubic-bezier(0.4, 0, 0.2, 1)`,
         }),
-        []
+        [],
     );
 
     const getTextContainerStyle = useCallback(
@@ -107,7 +107,7 @@ const useAnimationStyles = (isCollapsed: boolean) => {
             overflow: 'hidden',
             transition: `width ${ANIMATION_DURATION.SIDEBAR}ms cubic-bezier(0.4, 0, 0.2, 1)`,
         }),
-        [isCollapsed]
+        [isCollapsed],
     );
 
     const getUniformTextStyle = useCallback(
@@ -117,7 +117,7 @@ const useAnimationStyles = (isCollapsed: boolean) => {
             transition: `opacity 300ms ease ${isCollapsed ? '0ms' : '200ms'}`,
             whiteSpace: 'nowrap' as const,
         }),
-        [isCollapsed]
+        [isCollapsed],
     );
 
     return {
@@ -157,8 +157,8 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
 
     useEffect(() => {
         checkApiKeyStatus()
-            .then(status => setHasApiKey(status.hasApiKey))
-            .catch(err => {
+            .then((status) => setHasApiKey(status.hasApiKey))
+            .catch((err) => {
                 console.error('Failed to check API key status:', err);
                 setHasApiKey(null); // Set to null on error
             });
@@ -202,7 +202,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                 ariaLabel: 'Settings menu',
             },
         ],
-        [onSearchClick]
+        [onSearchClick],
     );
 
     const settingsSubmenu = useMemo<SubmenuItem[]>(
@@ -211,7 +211,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
             { name: 'Data & privacy', href: '/settings/privacy', icon: '/privacy.svg', isLucide: false, ariaLabel: 'Data and privacy settings' },
             { name: 'Billing', href: '/settings/billing', icon: '/credit-card.svg', isLucide: false, ariaLabel: 'Billing settings' },
         ],
-        []
+        [],
     );
 
     const bottomItems = useMemo(
@@ -235,7 +235,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                 ariaLabel: 'Download Pickle Glass (new window)',
             },
         ],
-        []
+        [],
     );
 
     const toggleSidebar = useCallback(() => {
@@ -244,7 +244,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
 
     const toggleSettings = useCallback(() => {
         if (!pathname.startsWith('/settings')) {
-            setIsSettingsExpanded(prev => !prev);
+            setIsSettingsExpanded((prev) => !prev);
         }
     }, [pathname]);
 
@@ -282,7 +282,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                     <li key={item.name}>
                         <button
                             onClick={item.action}
-                            onKeyDown={e => handleKeyDown(e, item.action)}
+                            onKeyDown={(e) => handleKeyDown(e, item.action)}
                             className={`${baseButtonClasses} ${getStateClasses(false)}`}
                             title={isCollapsed ? item.name : undefined}
                             aria-label={item.ariaLabel || item.name}
@@ -307,7 +307,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                     <li key={item.name}>
                         <button
                             onClick={toggleSettings}
-                            onKeyDown={e => handleKeyDown(e, toggleSettings)}
+                            onKeyDown={(e) => handleKeyDown(e, toggleSettings)}
                             className={`${baseButtonClasses} ${getStateClasses(isActive)}`}
                             title={isCollapsed ? item.name : undefined}
                             aria-label={item.ariaLabel || item.name}
@@ -378,7 +378,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                                     {isFirebaseUser ? (
                                         <button
                                             onClick={handleLogout}
-                                            onKeyDown={e => handleKeyDown(e, handleLogout)}
+                                            onKeyDown={(e) => handleKeyDown(e, handleLogout)}
                                             className={`
                                     group flex items-center rounded-lg px-[12px] py-[8px] text-[13px] gap-x-[9px]
                                     text-red-600 hover:text-red-700 hover:bg-[#f7f7f7] w-full 
@@ -455,7 +455,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
             getTextContainerStyle,
             getSubmenuAnimationStyle,
             settingsSubmenu,
-        ]
+        ],
     );
 
     const getUserDisplayName = useCallback(() => {
@@ -484,7 +484,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                         <Image src="/symbol.svg" alt="Logo" width={20} height={20} className="mx-3 shrink-0" />
                         <button
                             onClick={toggleSidebar}
-                            onKeyDown={e => handleKeyDown(e, toggleSidebar)}
+                            onKeyDown={(e) => handleKeyDown(e, toggleSidebar)}
                             className={`${
                                 isCollapsed ? '' : ''
                             } "absolute inset-0 flex items-center justify-center text-gray-500 hover:text-gray-800 rounded-md opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out focus:outline-none`}
@@ -506,7 +506,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                         </Link>
                         <button
                             onClick={toggleSidebar}
-                            onKeyDown={e => handleKeyDown(e, toggleSidebar)}
+                            onKeyDown={(e) => handleKeyDown(e, toggleSidebar)}
                             className={`${
                                 isCollapsed ? '' : ''
                             } text-gray-500 hover:text-gray-800 p-1 rounded-[4px] hover:bg-[#f7f7f7] h-6 w-6 transition-colors focus:outline-none`}
@@ -529,7 +529,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
 
                 <button
                     onClick={toggleSidebar}
-                    onKeyDown={e => handleKeyDown(e, toggleSidebar)}
+                    onKeyDown={(e) => handleKeyDown(e, toggleSidebar)}
                     className={`${
                         isCollapsed ? '' : 'opacity-0'
                     } "absolute inset-0 flex items-center justify-center w-full h-[36px] mb-[8px] rounded-[20px] flex justify-center items-center text-gray-500 hover:text-gray-800 rounded-md scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out focus:outline-none`}
@@ -542,7 +542,9 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
 
                 {!isCollapsed && hasApiKey !== null && (
                     <div className="px-2.5 py-2 text-center">
-                        <span className={`text-xs px-2 py-1 rounded-full ${hasApiKey ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        <span
+                            className={`text-xs px-2 py-1 rounded-full ${hasApiKey ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}
+                        >
                             {hasApiKey ? 'Local running' : 'Pickle Free System'}
                         </span>
                     </div>
@@ -607,7 +609,7 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                         tabIndex={0}
                         role="button"
                         aria-label={`User: ${getUserDisplayName()}`}
-                        onKeyDown={e =>
+                        onKeyDown={(e) =>
                             handleKeyDown(e, () => {
                                 if (isFirebaseUser) {
                                     router.push('/settings');

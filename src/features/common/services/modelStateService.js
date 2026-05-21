@@ -26,7 +26,7 @@ class ModelStateService extends EventEmitter {
     async _initializeEncryption() {
         try {
             const rows = await providerSettingsRepository.getRawApiKeys();
-            if (rows.some(r => r.api_key && encryptionService.looksEncrypted(r.api_key))) {
+            if (rows.some((r) => r.api_key && encryptionService.looksEncrypted(r.api_key))) {
                 console.log('[ModelStateService] Encrypted keys detected, initializing encryption...');
                 const userIdForMigration = this.authService.getCurrentUserId();
                 await encryptionService.initializeKey(userIdForMigration);
@@ -41,12 +41,12 @@ class ModelStateService extends EventEmitter {
     async _runMigrations() {
         console.log('[ModelStateService] Checking for data migrations...');
         const userId = this.authService.getCurrentUserId();
-        
+
         try {
             const sqliteClient = require('./sqliteClient');
             const db = sqliteClient.getDb();
             const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='user_model_selections'").get();
-            
+
             if (tableExists) {
                 const selections = db.prepare('SELECT * FROM user_model_selections WHERE uid = ?').get(userId);
                 if (selections) {
@@ -93,7 +93,7 @@ class ModelStateService extends EventEmitter {
             console.error('[ModelStateService] electron-store migration failed:', error);
         }
     }
-    
+
     setupLocalAIStateSync() {
         const localAIManager = require('./localAIManager');
         localAIManager.on('state-changed', (service, status) => {
@@ -113,17 +113,17 @@ class ModelStateService extends EventEmitter {
     async getLiveState() {
         const providerSettings = await providerSettingsRepository.getAll();
         const apiKeys = {};
-        Object.keys(PROVIDERS).forEach(provider => {
-            const setting = providerSettings.find(s => s.provider === provider);
+        Object.keys(PROVIDERS).forEach((provider) => {
+            const setting = providerSettings.find((s) => s.provider === provider);
             apiKeys[provider] = setting?.api_key || null;
         });
 
         const activeSettings = await providerSettingsRepository.getActiveSettings();
         const selectedModels = {
             llm: activeSettings.llm?.selected_llm_model || null,
-            stt: activeSettings.stt?.selected_stt_model || null
+            stt: activeSettings.stt?.selected_stt_model || null,
         };
-        
+
         return { apiKeys, selectedModels };
     }
 
@@ -149,7 +149,7 @@ class ModelStateService extends EventEmitter {
                 console.log(`[ModelStateService] No valid ${type.toUpperCase()} model selected or selection forced. Finding an alternative...`);
                 const availableModels = await this.getAvailableModels(type);
                 if (availableModels.length > 0) {
-                    const apiModel = availableModels.find(model => {
+                    const apiModel = availableModels.find((model) => {
                         const provider = this.getProviderForModel(model.id, type);
                         return provider && provider !== 'ollama' && provider !== 'whisper';
                     });
@@ -159,13 +159,13 @@ class ModelStateService extends EventEmitter {
                 } else {
                     await providerSettingsRepository.setActiveProvider(null, type);
                     if (!isInitialBoot) {
-                       this.emit('state-updated', await this.getLiveState());
+                        this.emit('state-updated', await this.getLiveState());
                     }
                 }
             }
         }
     }
-    
+
     async setFirebaseVirtualKey(virtualKey) {
         console.log(`[ModelStateService] Setting Firebase virtual key.`);
 
@@ -185,14 +185,14 @@ class ModelStateService extends EventEmitter {
                 if (llmModel) await this.setSelectedModel('llm', llmModel.id);
                 if (sttModel) await this.setSelectedModel('stt', sttModel.id);
             } else {
-                console.log('[ModelStateService] openai-glass key updated, but respecting user\'s existing model selection.');
+                console.log("[ModelStateService] openai-glass key updated, but respecting user's existing model selection.");
             }
         } else {
             // 로그아웃 시, 현재 활성화된 모델이 openai-glass인 경우에만 다른 모델로 전환합니다.
             const selected = await this.getSelectedModels();
             const llmProvider = this.getProviderForModel(selected.llm, 'llm');
             const sttProvider = this.getProviderForModel(selected.stt, 'stt');
-            
+
             const typesToReselect = [];
             if (llmProvider === 'openai-glass') typesToReselect.push('llm');
             if (sttProvider === 'openai-glass') typesToReselect.push('stt');
@@ -219,13 +219,13 @@ class ModelStateService extends EventEmitter {
             }
         }
 
-        const finalKey = (provider === 'ollama' || provider === 'whisper') ? 'local' : key;
-        const existingSettings = await providerSettingsRepository.getByProvider(provider) || {};
+        const finalKey = provider === 'ollama' || provider === 'whisper' ? 'local' : key;
+        const existingSettings = (await providerSettingsRepository.getByProvider(provider)) || {};
         await providerSettingsRepository.upsert(provider, { ...existingSettings, api_key: finalKey });
-        
+
         // 키가 추가/변경되었으므로, 해당 provider의 모델을 자동 선택할 수 있는지 확인
         await this._autoSelectAvailableModels([]);
-        
+
         this.emit('state-updated', await this.getLiveState());
         this.emit('settings-updated');
         return { success: true };
@@ -234,7 +234,7 @@ class ModelStateService extends EventEmitter {
     async getAllApiKeys() {
         const allSettings = await providerSettingsRepository.getAll();
         const apiKeys = {};
-        allSettings.forEach(s => {
+        allSettings.forEach((s) => {
             if (s.provider !== 'openai-glass') {
                 apiKeys[s.provider] = s.api_key;
             }
@@ -266,9 +266,9 @@ class ModelStateService extends EventEmitter {
      */
     async hasValidApiKey() {
         if (this.isLoggedInWithFirebase()) return true;
-        
+
         const allSettings = await providerSettingsRepository.getAll();
-        return allSettings.some(s => s.api_key && s.api_key.trim().length > 0);
+        return allSettings.some((s) => s.api_key && s.api_key.trim().length > 0);
     }
 
     getProviderForModel(arg1, arg2) {
@@ -284,13 +284,13 @@ class ModelStateService extends EventEmitter {
         if (!modelId || !type) return null;
         for (const providerId in PROVIDERS) {
             const models = type === 'llm' ? PROVIDERS[providerId].llmModels : PROVIDERS[providerId].sttModels;
-            if (models && models.some(m => m.id === modelId)) {
+            if (models && models.some((m) => m.id === modelId)) {
                 return providerId;
             }
         }
         if (type === 'llm') {
             const installedModels = ollamaModelRepository.getInstalledModels();
-            if (installedModels.some(m => m.name === modelId)) return 'ollama';
+            if (installedModels.some((m) => m.name === modelId)) return 'ollama';
         }
         return null;
     }
@@ -302,7 +302,7 @@ class ModelStateService extends EventEmitter {
             stt: active.stt?.selected_stt_model || null,
         };
     }
-    
+
     async setSelectedModel(type, modelId) {
         const provider = this.getProviderForModel(modelId, type);
         if (!provider) {
@@ -310,7 +310,7 @@ class ModelStateService extends EventEmitter {
             return false;
         }
 
-        const existingSettings = await providerSettingsRepository.getByProvider(provider) || {};
+        const existingSettings = (await providerSettingsRepository.getByProvider(provider)) || {};
         const newSettings = { ...existingSettings };
 
         if (type === 'llm') {
@@ -318,16 +318,18 @@ class ModelStateService extends EventEmitter {
         } else {
             newSettings.selected_stt_model = modelId;
         }
-        
+
         await providerSettingsRepository.upsert(provider, newSettings);
         await providerSettingsRepository.setActiveProvider(provider, type);
-        
+
         console.log(`[ModelStateService] Selected ${type} model: ${modelId} (provider: ${provider})`);
-        
+
         if (type === 'llm' && provider === 'ollama') {
-            require('./localAIManager').warmUpModel(modelId).catch(err => console.warn(err));
+            require('./localAIManager')
+                .warmUpModel(modelId)
+                .catch((err) => console.warn(err));
         }
-        
+
         this.emit('state-updated', await this.getLiveState());
         this.emit('settings-updated');
         return true;
@@ -344,18 +346,18 @@ class ModelStateService extends EventEmitter {
             const providerId = setting.provider;
             if (providerId === 'ollama' && type === 'llm') {
                 const installed = ollamaModelRepository.getInstalledModels();
-                available.push(...installed.map(m => ({ id: m.name, name: m.name })));
+                available.push(...installed.map((m) => ({ id: m.name, name: m.name })));
             } else if (PROVIDERS[providerId]?.[modelListKey]) {
                 available.push(...PROVIDERS[providerId][modelListKey]);
             }
         }
-        return [...new Map(available.map(item => [item.id, item])).values()];
+        return [...new Map(available.map((item) => [item.id, item])).values()];
     }
 
     async getCurrentModelInfo(type) {
         const activeSetting = await providerSettingsRepository.getActiveProvider(type);
         if (!activeSetting) return null;
-        
+
         const model = type === 'llm' ? activeSetting.selected_llm_model : activeSetting.selected_stt_model;
         if (!model) return null;
 
@@ -391,7 +393,7 @@ class ModelStateService extends EventEmitter {
         }
         return config;
     }
-    
+
     async handleRemoveApiKey(provider) {
         const success = await this.removeApiKey(provider);
         if (success) {
@@ -416,7 +418,7 @@ class ModelStateService extends EventEmitter {
         if (this.isLoggedInWithFirebase()) return true;
         const allSettings = await providerSettingsRepository.getAll();
         const apiKeyMap = {};
-        allSettings.forEach(s => apiKeyMap[s.provider] = s.api_key);
+        allSettings.forEach((s) => (apiKeyMap[s.provider] = s.api_key));
         // LLM
         const hasLlmKey = Object.entries(apiKeyMap).some(([provider, key]) => {
             if (!key) return false;

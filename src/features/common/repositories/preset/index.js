@@ -36,4 +36,4 @@ const presetRepositoryAdapter = {
     },
 };
 
-module.exports = presetRepositoryAdapter; 
+module.exports = presetRepositoryAdapter;

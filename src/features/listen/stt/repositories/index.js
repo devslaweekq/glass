@@ -17,7 +17,7 @@ const sttRepositoryAdapter = {
     },
     getAllTranscriptsBySessionId: (sessionId) => {
         return getBaseRepository().getAllTranscriptsBySessionId(sessionId);
-    }
+    },
 };
 
-module.exports = sttRepositoryAdapter; 
+module.exports = sttRepositoryAdapter;

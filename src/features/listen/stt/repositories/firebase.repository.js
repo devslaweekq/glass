@@ -5,7 +5,7 @@ const { createEncryptedConverter } = require('../../../common/repositories/fires
 const transcriptConverter = createEncryptedConverter(['text']);
 
 function transcriptsCol(sessionId) {
-    if (!sessionId) throw new Error("Session ID is required to access transcripts.");
+    if (!sessionId) throw new Error('Session ID is required to access transcripts.');
     const db = getFirestoreInstance();
     return collection(db, `sessions/${sessionId}/transcripts`).withConverter(transcriptConverter);
 }
@@ -27,10 +27,10 @@ async function addTranscript({ uid, sessionId, speaker, text }) {
 async function getAllTranscriptsBySessionId(sessionId) {
     const q = query(transcriptsCol(sessionId), orderBy('start_at', 'asc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data());
+    return querySnapshot.docs.map((doc) => doc.data());
 }
 
 module.exports = {
     addTranscript,
     getAllTranscriptsBySessionId,
-}; 
+};
