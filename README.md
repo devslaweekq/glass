@@ -71,7 +71,7 @@ npm run setup
 
 - OpenAI API: Get OpenAI API Key [here](https://platform.openai.com/api-keys)
 - Gemini API: Get Gemini API Key [here](https://aistudio.google.com/apikey)
-- Local LLM Ollama & Whisper
+- Local LLM Ollama
 
 ### Liquid Glass Design (coming soon)
 

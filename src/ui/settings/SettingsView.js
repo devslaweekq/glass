@@ -539,8 +539,6 @@ export class SettingsView extends LitElement {
         ollamaStatus: { type: Object, state: true },
         ollamaModels: { type: Array, state: true },
         installingModels: { type: Object, state: true },
-        // Whisper related properties
-        whisperModels: { type: Array, state: true },
     };
     //////// after_modelStateService ////////
 
@@ -549,7 +547,7 @@ export class SettingsView extends LitElement {
         //////// after_modelStateService ////////
         this.shortcuts = {};
         this.firebaseUser = null;
-        this.apiKeys = { openai: '', gemini: '', anthropic: '', whisper: '' };
+        this.apiKeys = { openai: '', gemini: '', anthropic: '', deepgram: '' };
         this.providerConfig = {};
         this.isLoading = true;
         this.isContentProtectionOn = true;
@@ -567,9 +565,6 @@ export class SettingsView extends LitElement {
         this.ollamaStatus = { installed: false, running: false };
         this.ollamaModels = [];
         this.installingModels = {}; // { modelName: progress }
-        // Whisper related
-        this.whisperModels = [];
-        this.whisperProgressTracker = null; // Will be initialized when needed
         this.handleUsePicklesKey = this.handleUsePicklesKey.bind(this);
         this.autoUpdateEnabled = true;
         this.autoUpdateLoading = true;
@@ -618,22 +613,6 @@ export class SettingsView extends LitElement {
             if (ollamaStatus?.success) {
                 this.ollamaStatus = { installed: ollamaStatus.installed, running: ollamaStatus.running };
                 this.ollamaModels = ollamaStatus.models || [];
-            }
-
-            // Load Whisper models status only if Whisper is enabled
-            if (this.apiKeys?.whisper === 'local') {
-                const whisperModelsResult = await window.api.settingsView.getWhisperInstalledModels();
-                if (whisperModelsResult?.success) {
-                    const installedWhisperModels = whisperModelsResult.models;
-                    if (this.providerConfig?.whisper) {
-                        this.providerConfig.whisper.sttModels.forEach((m) => {
-                            const installedInfo = installedWhisperModels.find((i) => i.id === m.id);
-                            if (installedInfo) {
-                                m.installed = installedInfo.installed;
-                            }
-                        });
-                    }
-                }
             }
 
             // Trigger UI update
@@ -716,20 +695,6 @@ export class SettingsView extends LitElement {
             return;
         }
 
-        // For Whisper, just enable it
-        if (provider === 'whisper') {
-            this.saving = true;
-            const result = await window.api.settingsView.validateKey({ provider, key: 'local' });
-
-            if (result.success) {
-                await this.refreshModelData();
-            } else {
-                alert(`Failed to enable Whisper: ${result.error}`);
-            }
-            this.saving = false;
-            return;
-        }
-
         // For other providers, use the normal flow
         this.saving = true;
         const result = await window.api.settingsView.validateKey({ provider, key });
@@ -796,17 +761,6 @@ export class SettingsView extends LitElement {
             }
         }
 
-        // Check if this is a Whisper model that needs to be downloaded
-        if (provider === 'whisper' && type === 'stt') {
-            const isInstalling = this.installingModels[modelId] !== undefined;
-            const whisperModelInfo = this.providerConfig.whisper.sttModels.find((m) => m.id === modelId);
-
-            if (whisperModelInfo && !whisperModelInfo.installed && !isInstalling) {
-                await this.downloadWhisperModel(modelId);
-                return;
-            }
-        }
-
         this.saving = true;
         await window.api.settingsView.setSelectedModel({ type, modelId });
         if (type === 'llm') this.selectedLlm = modelId;
@@ -864,61 +818,6 @@ export class SettingsView extends LitElement {
             console.error(`[SettingsView] Error installing model ${modelName}:`, error);
             delete this.installingModels[modelName];
             this.requestUpdate();
-        }
-    }
-
-    async downloadWhisperModel(modelId) {
-        // Mark as installing
-        this.installingModels = { ...this.installingModels, [modelId]: 0 };
-        this.requestUpdate();
-
-        try {
-            // Set up progress listener - 통합 LocalAI 이벤트 사용
-            const progressHandler = (event, data) => {
-                if (data.service === 'whisper' && data.model === modelId) {
-                    this.installingModels = { ...this.installingModels, [modelId]: data.progress || 0 };
-                    this.requestUpdate();
-                }
-            };
-
-            window.api.settingsView.onLocalAIInstallProgress(progressHandler);
-
-            // Start download
-            const result = await window.api.settingsView.downloadWhisperModel(modelId);
-
-            if (result.success) {
-                // Update the model's installed status
-                if (this.providerConfig?.whisper?.sttModels) {
-                    const modelInfo = this.providerConfig.whisper.sttModels.find((m) => m.id === modelId);
-                    if (modelInfo) {
-                        modelInfo.installed = true;
-                    }
-                }
-
-                // Remove from installing models
-                delete this.installingModels[modelId];
-                this.requestUpdate();
-
-                // Reload LocalAI status to get fresh data
-                await this.loadLocalAIStatus();
-
-                // Auto-select the model after download
-                await this.selectModel('stt', modelId);
-            } else {
-                // Remove from installing models on failure too
-                delete this.installingModels[modelId];
-                this.requestUpdate();
-                alert(`Failed to download Whisper model: ${result.error}`);
-            }
-
-            // Cleanup
-            window.api.settingsView.removeOnLocalAIInstallProgress(progressHandler);
-        } catch (error) {
-            console.error(`[SettingsView] Error downloading Whisper model ${modelId}:`, error);
-            // Remove from installing models on error
-            delete this.installingModels[modelId];
-            this.requestUpdate();
-            alert(`Error downloading ${modelId}: ${error.message}`);
         }
     }
 
@@ -1278,31 +1177,6 @@ export class SettingsView extends LitElement {
                             `;
                         }
 
-                        if (id === 'whisper') {
-                            // Simplified UI for Whisper without model selection
-                            return html`
-                                <div class="provider-key-group">
-                                    <label>${config.name} (Local STT)</label>
-                                    ${this.apiKeys[id] === 'local'
-                                        ? html`
-                                              <div
-                                                  style="padding: 8px; background: rgba(0,255,0,0.1); border-radius: 4px; font-size: 11px; color: rgba(0,255,0,0.8); margin-bottom: 8px;"
-                                              >
-                                                  ✓ Whisper is enabled
-                                              </div>
-                                              <button class="settings-button full-width danger" @click=${() => this.handleClearKey(id)}>
-                                                  Disable Whisper
-                                              </button>
-                                          `
-                                        : html`
-                                              <button class="settings-button full-width" @click=${() => this.handleSaveKey(id)}>
-                                                  Enable Whisper STT
-                                              </button>
-                                          `}
-                                </div>
-                            `;
-                        }
-
                         // Regular providers
                         return html`
                             <div class="provider-key-group">
@@ -1387,37 +1261,16 @@ export class SettingsView extends LitElement {
                     ${this.isSttListVisible
                         ? html`
                               <div class="model-list">
-                                  ${this.availableSttModels.map((model) => {
-                                      const isWhisper = this.getProviderForModel('stt', model.id) === 'whisper';
-                                      const whisperModel =
-                                          isWhisper && this.providerConfig?.whisper?.sttModels
-                                              ? this.providerConfig.whisper.sttModels.find((m) => m.id === model.id)
-                                              : null;
-                                      const isInstalling = this.installingModels[model.id] !== undefined;
-                                      const installProgress = this.installingModels[model.id] || 0;
-
-                                      return html`
+                                  ${this.availableSttModels.map(
+                                      (model) => html`
                                           <div
                                               class="model-item ${this.selectedStt === model.id ? 'selected' : ''}"
                                               @click=${() => this.selectModel('stt', model.id)}
                                           >
                                               <span>${model.name}</span>
-                                              ${isWhisper
-                                                  ? html`
-                                                        ${isInstalling
-                                                            ? html`
-                                                                  <div class="install-progress">
-                                                                      <div class="install-progress-bar" style="width: ${installProgress}%"></div>
-                                                                  </div>
-                                                              `
-                                                            : whisperModel?.installed
-                                                              ? html` <span class="model-status installed">✓ Installed</span> `
-                                                              : html` <span class="model-status not-installed">Not Installed</span> `}
-                                                    `
-                                                  : ''}
                                           </div>
-                                      `;
-                                  })}
+                                      `,
+                                  )}
                               </div>
                           `
                         : ''}

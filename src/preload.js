@@ -46,7 +46,6 @@ contextBridge.exposeInMainWorld('api', {
         installOllama: () => ipcRenderer.invoke('localai:install', { service: 'ollama' }),
         startOllamaService: () => ipcRenderer.invoke('localai:start-service', 'ollama'),
         pullOllamaModel: (modelName) => ipcRenderer.invoke('ollama:pull-model', modelName),
-        downloadWhisperModel: (modelId) => ipcRenderer.invoke('whisper:download-model', modelId),
         validateKey: (data) => ipcRenderer.invoke('model:validate-key', data),
         setSelectedModel: (data) => ipcRenderer.invoke('model:set-selected-model', data),
         areProvidersConfigured: () => ipcRenderer.invoke('model:are-providers-configured'),
@@ -220,10 +219,6 @@ contextBridge.exposeInMainWorld('api', {
         getOllamaStatus: () => ipcRenderer.invoke('ollama:get-status'),
         ensureOllamaReady: () => ipcRenderer.invoke('ollama:ensure-ready'),
         shutdownOllama: (graceful) => ipcRenderer.invoke('ollama:shutdown', graceful),
-
-        // Whisper Management
-        getWhisperInstalledModels: () => ipcRenderer.invoke('whisper:get-installed-models'),
-        downloadWhisperModel: (modelId) => ipcRenderer.invoke('whisper:download-model', modelId),
 
         // Settings Management
         getPresets: () => ipcRenderer.invoke('settings:getPresets'),

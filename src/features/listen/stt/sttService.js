@@ -166,43 +166,7 @@ class SttService {
             }
             // console.log('[SttService] handleMyMessage', message);
 
-            if (this.modelInfo.provider === 'whisper') {
-                // Whisper STT emits 'transcription' events with different structure
-                if (message.text && message.text.trim()) {
-                    const finalText = message.text.trim();
-
-                    // Filter out Whisper noise transcriptions
-                    const noisePatterns = [
-                        '[BLANK_AUDIO]',
-                        '[INAUDIBLE]',
-                        '[MUSIC]',
-                        '[SOUND]',
-                        '[NOISE]',
-                        '(BLANK_AUDIO)',
-                        '(INAUDIBLE)',
-                        '(MUSIC)',
-                        '(SOUND)',
-                        '(NOISE)',
-                    ];
-
-                    const isNoise = noisePatterns.some((pattern) => finalText.includes(pattern) || finalText === pattern);
-
-                    if (!isNoise && finalText.length > 2) {
-                        this.debounceMyCompletion(finalText);
-
-                        this.sendToRenderer('stt-update', {
-                            speaker: 'Me',
-                            text: finalText,
-                            isPartial: false,
-                            isFinal: true,
-                            timestamp: Date.now(),
-                        });
-                    } else {
-                        console.log(`[Whisper-Me] Filtered noise: "${finalText}"`);
-                    }
-                }
-                return;
-            } else if (this.modelInfo.provider === 'gemini') {
+            if (this.modelInfo.provider === 'gemini') {
                 if (!message.serverContent?.modelTurn) {
                     console.log('[Gemini STT - Me]', JSON.stringify(message, null, 2));
                 }
@@ -303,44 +267,7 @@ class SttService {
                 return;
             }
 
-            if (this.modelInfo.provider === 'whisper') {
-                // Whisper STT emits 'transcription' events with different structure
-                if (message.text && message.text.trim()) {
-                    const finalText = message.text.trim();
-
-                    // Filter out Whisper noise transcriptions
-                    const noisePatterns = [
-                        '[BLANK_AUDIO]',
-                        '[INAUDIBLE]',
-                        '[MUSIC]',
-                        '[SOUND]',
-                        '[NOISE]',
-                        '(BLANK_AUDIO)',
-                        '(INAUDIBLE)',
-                        '(MUSIC)',
-                        '(SOUND)',
-                        '(NOISE)',
-                    ];
-
-                    const isNoise = noisePatterns.some((pattern) => finalText.includes(pattern) || finalText === pattern);
-
-                    // Only process if it's not noise, not a false positive, and has meaningful content
-                    if (!isNoise && finalText.length > 2) {
-                        this.debounceTheirCompletion(finalText);
-
-                        this.sendToRenderer('stt-update', {
-                            speaker: 'Them',
-                            text: finalText,
-                            isPartial: false,
-                            isFinal: true,
-                            timestamp: Date.now(),
-                        });
-                    } else {
-                        console.log(`[Whisper-Them] Filtered noise: "${finalText}"`);
-                    }
-                }
-                return;
-            } else if (this.modelInfo.provider === 'gemini') {
+            if (this.modelInfo.provider === 'gemini') {
                 if (!message.serverContent?.modelTurn) {
                     console.log('[Gemini STT - Them]', JSON.stringify(message, null, 2));
                 }
@@ -448,12 +375,12 @@ class SttService {
 
         const sttOptions = {
             apiKey: this.modelInfo.apiKey,
+            model: this.modelInfo.model,
             language: effectiveLanguage,
             usePortkey: this.modelInfo.provider === 'openai-glass',
             portkeyVirtualKey: this.modelInfo.provider === 'openai-glass' ? this.modelInfo.apiKey : undefined,
         };
 
-        // Add sessionType for Whisper to distinguish between My and Their sessions
         const myOptions = { ...sttOptions, callbacks: mySttConfig.callbacks, sessionType: 'my' };
         const theirOptions = { ...sttOptions, callbacks: theirSttConfig.callbacks, sessionType: 'their' };
 

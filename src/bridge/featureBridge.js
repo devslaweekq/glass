@@ -2,7 +2,6 @@
 const { ipcMain, app, BrowserWindow } = require('electron');
 const settingsService = require('../features/settings/settingsService');
 const authService = require('../features/common/services/authService');
-const whisperService = require('../features/common/services/whisperService');
 const ollamaService = require('../features/common/services/ollamaService');
 const modelStateService = require('../features/common/services/modelStateService');
 const shortcutsService = require('../features/shortcuts/shortcutsService');
@@ -55,10 +54,6 @@ module.exports = {
 
         // App
         ipcMain.handle('quit-application', () => app.quit());
-
-        // Whisper
-        ipcMain.handle('whisper:download-model', async (event, modelId) => await whisperService.handleDownloadModel(modelId));
-        ipcMain.handle('whisper:get-installed-models', async () => await whisperService.handleGetInstalledModels());
 
         // General
         ipcMain.handle('get-preset-templates', () => presetRepository.getPresetTemplates());

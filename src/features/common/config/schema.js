@@ -80,15 +80,6 @@ const LATEST_SCHEMA = {
             { name: 'installing', type: 'INTEGER DEFAULT 0' },
         ],
     },
-    whisper_models: {
-        columns: [
-            { name: 'id', type: 'TEXT PRIMARY KEY' },
-            { name: 'name', type: 'TEXT NOT NULL' },
-            { name: 'size', type: 'TEXT NOT NULL' },
-            { name: 'installed', type: 'INTEGER DEFAULT 0' },
-            { name: 'installing', type: 'INTEGER DEFAULT 0' },
-        ],
-    },
     provider_settings: {
         columns: [
             { name: 'provider', type: 'TEXT NOT NULL' },

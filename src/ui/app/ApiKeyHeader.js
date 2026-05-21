@@ -18,7 +18,6 @@ export class ApiKeyHeader extends LitElement {
         ollamaStatus: { type: Object, state: true },
         installingModel: { type: String, state: true },
         installProgress: { type: Number, state: true },
-        whisperInstallingModels: { type: Object, state: true },
         backCallback: { type: Function },
         llmError: { type: String },
         sttError: { type: String },
@@ -343,7 +342,6 @@ export class ApiKeyHeader extends LitElement {
         this.ollamaStatus = { installed: false, running: false };
         this.installingModel = null;
         this.installProgress = 0;
-        this.whisperInstallingModels = {};
         this.backCallback = () => {};
         this.llmError = '';
         this.sttError = '';
@@ -438,7 +436,7 @@ export class ApiKeyHeader extends LitElement {
                 // 'openai-glass' 같은 가상 Provider는 UI에 표시하지 않음
                 if (id.includes('-glass')) continue;
                 const hasLlmModels = config[id].llmModels.length > 0 || id === 'ollama';
-                const hasSttModels = config[id].sttModels.length > 0 || id === 'whisper';
+                const hasSttModels = config[id].sttModels.length > 0;
 
                 if (hasLlmModels) {
                     llmProviders.push({ id, name: config[id].name });
@@ -801,15 +799,14 @@ export class ApiKeyHeader extends LitElement {
         this.successMessage = '';
 
         if (this.sttProvider === 'ollama') {
-            console.warn('[ApiKeyHeader] Ollama does not support STT yet. Please select Whisper or another provider.');
-            this.sttError = '*Ollama does not support STT yet. Please select Whisper or another STT provider.';
+            console.warn('[ApiKeyHeader] Ollama does not support STT. Please select Deepgram or another provider.');
+            this.sttError = '*Ollama does not support STT. Please select Deepgram or another STT provider.';
             this.messageTimestamp = Date.now();
 
-            // Auto-select Whisper if available
-            const whisperProvider = this.providers.stt.find((p) => p.id === 'whisper');
-            if (whisperProvider) {
-                this.sttProvider = 'whisper';
-                console.log('[ApiKeyHeader] Auto-selected Whisper for STT');
+            const deepgramProvider = this.providers.stt.find((p) => p.id === 'deepgram');
+            if (deepgramProvider) {
+                this.sttProvider = 'deepgram';
+                console.log('[ApiKeyHeader] Auto-selected Deepgram for STT');
             }
         }
 
@@ -1369,67 +1366,6 @@ export class ApiKeyHeader extends LitElement {
         return !this.installingModel || this.installingModel !== modelName;
     }
 
-    async downloadWhisperModel(modelId) {
-        if (!modelId?.trim()) {
-            console.warn('[ApiKeyHeader] Invalid Whisper model ID');
-            return;
-        }
-
-        console.log(`[ApiKeyHeader] Starting Whisper model download: ${modelId}`);
-
-        // Mark as installing
-        this.whisperInstallingModels = { ...this.whisperInstallingModels, [modelId]: 0 };
-        this.clearMessages();
-        this.requestUpdate();
-
-        if (!window.api?.apiKeyHeader) return;
-        let progressHandler = null;
-
-        try {
-            // Set up robust progress listener - 통합 LocalAI 이벤트 사용
-            progressHandler = (event, data) => {
-                if (data.service === 'whisper' && data.model === modelId) {
-                    const cleanProgress = Math.round(Math.max(0, Math.min(100, data.progress || 0)));
-                    this.whisperInstallingModels = { ...this.whisperInstallingModels, [modelId]: cleanProgress };
-                    console.log(`[ApiKeyHeader] Whisper download progress: ${cleanProgress}% for ${modelId}`);
-                    this.requestUpdate();
-                }
-            };
-
-            window.api.apiKeyHeader.onLocalAIProgress(progressHandler);
-
-            // Start download with timeout protection
-            const downloadPromise = window.api.apiKeyHeader.downloadWhisperModel(modelId);
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Download timeout after 10 minutes')), 600000));
-
-            const result = await Promise.race([downloadPromise, timeoutPromise]);
-
-            if (result?.success) {
-                this.successMessage = `✓ ${modelId} downloaded successfully`;
-                this.messageTimestamp = Date.now();
-                console.log(`[ApiKeyHeader] Whisper model ${modelId} downloaded successfully`);
-
-                // Auto-select the downloaded model
-                this.selectedSttModel = modelId;
-            } else {
-                this.sttError = `*Failed to download ${modelId}: ${result?.error || 'Unknown error'}`;
-                this.messageTimestamp = Date.now();
-                console.error(`[ApiKeyHeader] Whisper download failed:`, result?.error);
-            }
-        } catch (error) {
-            console.error(`[ApiKeyHeader] Error downloading Whisper model ${modelId}:`, error);
-            this.sttError = `*Error downloading ${modelId}: ${error.message}`;
-            this.messageTimestamp = Date.now();
-        } finally {
-            // Cleanup
-            if (progressHandler) {
-                window.api.apiKeyHeader.removeOnLocalAIProgress(progressHandler);
-            }
-            delete this.whisperInstallingModels[modelId];
-            this.requestUpdate();
-        }
-    }
-
     handlePaste(e) {
         e.preventDefault();
         this.clearMessages();
@@ -1462,18 +1398,7 @@ export class ApiKeyHeader extends LitElement {
 
     //////// after_modelStateService ////////
     async handleSttModelChange(e) {
-        const modelId = e.target.value;
-        this.selectedSttModel = modelId;
-
-        if (modelId && this.sttProvider === 'whisper') {
-            // Check if model needs to be downloaded
-            const isInstalling = this.whisperInstallingModels[modelId] !== undefined;
-            if (!isInstalling) {
-                console.log(`[ApiKeyHeader] Auto-installing Whisper model: ${modelId}`);
-                await this.downloadWhisperModel(modelId);
-            }
-        }
-
+        this.selectedSttModel = e.target.value;
         this.requestUpdate();
     }
 
@@ -1553,20 +1478,6 @@ export class ApiKeyHeader extends LitElement {
             if (this.sttProvider === 'ollama') {
                 // Ollama doesn't support STT yet, so skip or use same as LLM validation
                 sttResult = { success: true };
-            } else if (this.sttProvider === 'whisper') {
-                // For Whisper, just validate it's enabled (model download already handled in handleSttModelChange)
-                sttResult = await window.api.apiKeyHeader.validateKey({
-                    provider: 'whisper',
-                    key: 'local',
-                });
-
-                if (sttResult.success && this.selectedSttModel) {
-                    // Set the selected model
-                    await window.api.apiKeyHeader.setSelectedModel({
-                        type: 'stt',
-                        modelId: this.selectedSttModel,
-                    });
-                }
             } else {
                 // For other providers, validate API key
                 if (!this.sttApiKey.trim()) {
@@ -1734,15 +1645,6 @@ export class ApiKeyHeader extends LitElement {
         // Cleanup event listeners
         if (window.api?.apiKeyHeader) {
             window.api.apiKeyHeader.removeAllListeners();
-        }
-
-        // Cancel any ongoing downloads
-        const downloadingModels = Object.keys(this.whisperInstallingModels);
-        if (downloadingModels.length > 0) {
-            console.log(`[ApiKeyHeader] Cancelling ${downloadingModels.length} ongoing Whisper downloads`);
-            downloadingModels.forEach((modelId) => {
-                delete this.whisperInstallingModels[modelId];
-            });
         }
 
         // Reset state
@@ -1925,19 +1827,16 @@ export class ApiKeyHeader extends LitElement {
     }
 
     render() {
-        const llmNeedsApiKey = this.llmProvider !== 'ollama' && this.llmProvider !== 'whisper';
-        const sttNeedsApiKey = this.sttProvider !== 'ollama' && this.sttProvider !== 'whisper';
+        const llmNeedsApiKey = this.llmProvider !== 'ollama';
+        const sttNeedsApiKey = this.sttProvider !== 'ollama';
         const llmNeedsModel = this.llmProvider === 'ollama';
-        const sttNeedsModel = this.sttProvider === 'whisper';
 
         const isButtonDisabled =
             this.isLoading ||
             this.installingModel ||
-            Object.keys(this.whisperInstallingModels).length > 0 ||
             (llmNeedsApiKey && !this.llmApiKey.trim()) ||
             (sttNeedsApiKey && !this.sttApiKey.trim()) ||
-            (llmNeedsModel && !this.selectedLlmModel?.trim()) ||
-            (sttNeedsModel && !this.selectedSttModel);
+            (llmNeedsModel && !this.selectedLlmModel?.trim());
 
         const llmProviderName = this.providers.llm.find((p) => p.id === this.llmProvider)?.name || this.llmProvider;
 
@@ -2019,45 +1918,22 @@ export class ApiKeyHeader extends LitElement {
                                       STT not supported by Ollama
                                   </div>
                               `
-                            : this.sttProvider === 'whisper'
-                              ? html`
-                                    <div class="input-wrapper">
-                                        <select
-                                            class="api-input ${this.sttError ? 'invalid' : ''}"
-                                            .value=${this.selectedSttModel || ''}
-                                            @change=${(e) => {
-                                                this.handleSttModelChange(e);
-                                                this.sttError = '';
-                                            }}
-                                            ?disabled=${this.isLoading}
-                                        >
-                                            <option value="">Select a model...</option>
-                                            ${[
-                                                { id: 'whisper-tiny', name: 'Whisper Tiny (39M)' },
-                                                { id: 'whisper-base', name: 'Whisper Base (74M)' },
-                                                { id: 'whisper-small', name: 'Whisper Small (244M)' },
-                                                { id: 'whisper-medium', name: 'Whisper Medium (769M)' },
-                                            ].map((model) => html` <option value="${model.id}">${model.name}</option> `)}
-                                        </select>
-                                        ${this.sttError ? html`<div class="inline-error-message">${this.sttError}</div>` : ''}
-                                    </div>
-                                `
-                              : html`
-                                    <div class="input-wrapper">
-                                        <input
-                                            type="password"
-                                            class="api-input ${this.sttError ? 'invalid' : ''}"
-                                            placeholder="Enter your STT API key"
-                                            .value=${this.sttApiKey}
-                                            @input=${(e) => {
-                                                this.sttApiKey = e.target.value;
-                                                this.sttError = '';
-                                            }}
-                                            ?disabled=${this.isLoading}
-                                        />
-                                        ${this.sttError ? html`<div class="inline-error-message">${this.sttError}</div>` : ''}
-                                    </div>
-                                `}
+                            : html`
+                                  <div class="input-wrapper">
+                                      <input
+                                          type="password"
+                                          class="api-input ${this.sttError ? 'invalid' : ''}"
+                                          placeholder="Enter your STT API key"
+                                          .value=${this.sttApiKey}
+                                          @input=${(e) => {
+                                              this.sttApiKey = e.target.value;
+                                              this.sttError = '';
+                                          }}
+                                          ?disabled=${this.isLoading}
+                                      />
+                                      ${this.sttError ? html`<div class="inline-error-message">${this.sttError}</div>` : ''}
+                                  </div>
+                              `}
                     </div>
                 </div>
                 <div class="confirm-button-container">
@@ -2066,9 +1942,7 @@ export class ApiKeyHeader extends LitElement {
                             ? 'Setting up...'
                             : this.installingModel
                               ? `Installing ${this.installingModel}...`
-                              : Object.keys(this.whisperInstallingModels).length > 0
-                                ? `Downloading...`
-                                : 'Confirm'}
+                              : 'Confirm'}
                     </button>
                 </div>
 

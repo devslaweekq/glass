@@ -1,8 +1,7 @@
 const { EventEmitter } = require('events');
 const ollamaService = require('./ollamaService');
-const whisperService = require('./whisperService');
 
-//Central manager for managing Ollama and Whisper services
+// Central manager for local Ollama (LLM)
 class LocalAIManager extends EventEmitter {
     constructor() {
         super();
@@ -10,7 +9,6 @@ class LocalAIManager extends EventEmitter {
         // service map
         this.services = {
             ollama: ollamaService,
-            whisper: whisperService,
         };
 
         // unified state management
@@ -18,11 +16,6 @@ class LocalAIManager extends EventEmitter {
             ollama: {
                 installed: false,
                 running: false,
-                models: [],
-            },
-            whisper: {
-                installed: false,
-                initialized: false,
                 models: [],
             },
         };
@@ -55,25 +48,6 @@ class LocalAIManager extends EventEmitter {
         ollamaService.on('state-changed', (state) => {
             this.emit('state-changed', 'ollama', state);
         });
-
-        // Whisper 이벤트
-        whisperService.on('install-progress', (data) => {
-            this.emit('install-progress', 'whisper', data);
-        });
-
-        whisperService.on('installation-complete', () => {
-            this.emit('installation-complete', 'whisper');
-            this.updateServiceState('whisper');
-        });
-
-        whisperService.on('error', (error) => {
-            this.emit('error', { service: 'whisper', ...error });
-        });
-
-        whisperService.on('model-download-complete', (data) => {
-            this.emit('model-ready', { service: 'whisper', ...data });
-            this.updateServiceState('whisper');
-        });
     }
 
     /**
@@ -88,10 +62,6 @@ class LocalAIManager extends EventEmitter {
         try {
             if (serviceName === 'ollama') {
                 return await service.handleInstall();
-            } else if (serviceName === 'whisper') {
-                // Whisper는 자동 설치
-                await service.initialize();
-                return { success: true };
             }
         } catch (error) {
             this.emit('error', {
@@ -114,16 +84,6 @@ class LocalAIManager extends EventEmitter {
 
         if (serviceName === 'ollama') {
             return await service.getStatus();
-        } else if (serviceName === 'whisper') {
-            const installed = await service.isInstalled();
-            const running = await service.isServiceRunning();
-            const models = await service.getInstalledModels();
-            return {
-                success: true,
-                installed,
-                running,
-                models,
-            };
         }
     }
 
@@ -153,8 +113,6 @@ class LocalAIManager extends EventEmitter {
         let result;
         if (serviceName === 'ollama') {
             result = await service.shutdown(false);
-        } else if (serviceName === 'whisper') {
-            result = await service.stopService();
         }
 
         // 서비스 중지 후 상태 업데이트
@@ -174,8 +132,6 @@ class LocalAIManager extends EventEmitter {
 
         if (serviceName === 'ollama') {
             return await service.pullModel(modelId);
-        } else if (serviceName === 'whisper') {
-            return await service.downloadModel(modelId);
         }
     }
 
@@ -190,8 +146,6 @@ class LocalAIManager extends EventEmitter {
 
         if (serviceName === 'ollama') {
             return await service.getAllModelsWithStatus();
-        } else if (serviceName === 'whisper') {
-            return await service.getInstalledModels();
         }
     }
 
@@ -294,23 +248,6 @@ class LocalAIManager extends EventEmitter {
                         };
                     }
                 }
-            }
-
-            // 4. Whisper 특화 진단
-            if (serviceName === 'whisper') {
-                // 바이너리 확인
-                diagnostics.checks.binary = {
-                    check: 'Whisper Binary',
-                    status: service.whisperPath ? 'pass' : 'fail',
-                    details: { path: service.whisperPath },
-                };
-
-                // 모델 디렉토리
-                diagnostics.checks.modelDir = {
-                    check: 'Model Directory',
-                    status: service.modelsDir ? 'pass' : 'fail',
-                    details: { path: service.modelsDir },
-                };
             }
 
             // 전체 진단 결과
@@ -438,23 +375,6 @@ class LocalAIManager extends EventEmitter {
                 repairLog.push('Restarted service after port cleanup');
             }
 
-            // 5. Whisper 특화 복구
-            if (serviceName === 'whisper') {
-                // 세션 정리
-                if (diagnostics.checks.running?.status === 'pass') {
-                    repairLog.push('Cleaning up Whisper sessions...');
-                    await service.cleanup();
-                    repairLog.push('Sessions cleaned up');
-                }
-
-                // 초기화
-                if (!service.installState.isInitialized) {
-                    repairLog.push('Re-initializing Whisper...');
-                    await service.initialize();
-                    repairLog.push('Whisper re-initialized');
-                }
-            }
-
             // 6. 최종 상태 확인
             repairLog.push('Verifying repair...');
             const finalDiagnostics = await this.runDiagnostics(serviceName);
@@ -559,9 +479,6 @@ class LocalAIManager extends EventEmitter {
             try {
                 if (serviceName === 'ollama') {
                     results[serviceName] = await service.shutdown(false);
-                } else if (serviceName === 'whisper') {
-                    await service.cleanup();
-                    results[serviceName] = true;
                 }
             } catch (error) {
                 results[serviceName] = false;

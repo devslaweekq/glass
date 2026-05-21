@@ -104,7 +104,7 @@ class ModelStateService extends EventEmitter {
     async handleLocalAIStateChange(service, state) {
         console.log(`[ModelStateService] LocalAI state changed: ${service}`, state);
         if (!state.installed || !state.running) {
-            const types = service === 'ollama' ? ['llm'] : service === 'whisper' ? ['stt'] : [];
+            const types = service === 'ollama' ? ['llm'] : [];
             await this._autoSelectAvailableModels(types);
         }
         this.emit('state-updated', await this.getLiveState());
@@ -151,7 +151,7 @@ class ModelStateService extends EventEmitter {
                 if (availableModels.length > 0) {
                     const apiModel = availableModels.find((model) => {
                         const provider = this.getProviderForModel(model.id, type);
-                        return provider && provider !== 'ollama' && provider !== 'whisper';
+                        return provider && provider !== 'ollama';
                     });
                     const newModel = apiModel || availableModels[0];
                     await this.setSelectedModel(type, newModel.id);
@@ -219,7 +219,7 @@ class ModelStateService extends EventEmitter {
             }
         }
 
-        const finalKey = provider === 'ollama' || provider === 'whisper' ? 'local' : key;
+        const finalKey = provider === 'ollama' ? 'local' : key;
         const existingSettings = (await providerSettingsRepository.getByProvider(provider)) || {};
         await providerSettingsRepository.upsert(provider, { ...existingSettings, api_key: finalKey });
 
@@ -403,7 +403,7 @@ class ModelStateService extends EventEmitter {
     // --- 핸들러 및 유틸리티 메서드 ---
 
     async validateApiKey(provider, key) {
-        if (!key || (key.trim() === '' && provider !== 'ollama' && provider !== 'whisper')) {
+        if (!key || (key.trim() === '' && provider !== 'ollama')) {
             return { success: false, error: 'API key cannot be empty.' };
         }
         const ProviderClass = getProviderClass(provider);
@@ -454,14 +454,13 @@ class ModelStateService extends EventEmitter {
         // LLM
         const hasLlmKey = Object.entries(apiKeyMap).some(([provider, key]) => {
             if (!key) return false;
-            if (provider === 'whisper') return false; // whisper는 LLM 없음
             return PROVIDERS[provider]?.llmModels?.length > 0;
         });
         // STT
         const hasSttKey = Object.entries(apiKeyMap).some(([provider, key]) => {
             if (!key) return false;
             if (provider === 'ollama') return false; // ollama는 STT 없음
-            return PROVIDERS[provider]?.sttModels?.length > 0 || provider === 'whisper';
+            return PROVIDERS[provider]?.sttModels?.length > 0;
         });
         return hasLlmKey && hasSttKey;
     }
