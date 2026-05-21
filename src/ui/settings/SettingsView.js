@@ -210,6 +210,23 @@ export class SettingsView extends LitElement {
             flex: 1;
         }
 
+        .settings-button.selected {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+
+        .language-section {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .language-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
         .settings-button.danger {
             background: rgba(255, 59, 48, 0.1);
             border-color: rgba(255, 59, 48, 0.3);
@@ -535,6 +552,8 @@ export class SettingsView extends LitElement {
         showPresets: { type: Boolean, state: true },
         autoUpdateEnabled: { type: Boolean, state: true },
         autoUpdateLoading: { type: Boolean, state: true },
+        appLanguage: { type: String, state: true },
+        languageSaving: { type: Boolean, state: true },
         // Ollama related properties
         ollamaStatus: { type: Object, state: true },
         ollamaModels: { type: Array, state: true },
@@ -573,8 +592,41 @@ export class SettingsView extends LitElement {
         this.handleUsePicklesKey = this.handleUsePicklesKey.bind(this);
         this.autoUpdateEnabled = true;
         this.autoUpdateLoading = true;
+        this.appLanguage = 'en';
+        this.languageSaving = false;
         this.loadInitialData();
         //////// after_modelStateService ////////
+    }
+
+    async loadAppLanguageSetting() {
+        if (!window.api) return;
+        try {
+            const result = await window.api.settingsView.getAppLanguage();
+            if (result?.success && result.language) {
+                this.appLanguage = result.language;
+            }
+        } catch (e) {
+            console.error('Error loading app language setting:', e);
+        }
+        this.requestUpdate();
+    }
+
+    async handleLanguageSelect(language) {
+        if (!window.api || this.languageSaving || this.appLanguage === language) return;
+        this.languageSaving = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.settingsView.setAppLanguage(language);
+            if (result?.success) {
+                this.appLanguage = language;
+            } else {
+                console.error('Failed to update app language:', result?.error);
+            }
+        } catch (e) {
+            console.error('Error updating app language:', e);
+        }
+        this.languageSaving = false;
+        this.requestUpdate();
     }
 
     async loadAutoUpdateSetting() {
@@ -952,6 +1004,7 @@ export class SettingsView extends LitElement {
         this.setupIpcListeners();
         this.setupWindowResize();
         this.loadAutoUpdateSetting();
+        this.loadAppLanguageSetting();
         // Force one height calculation immediately (innerHeight may be 0 at first)
         setTimeout(() => this.updateScrollHeight(), 0);
     }
@@ -999,6 +1052,9 @@ export class SettingsView extends LitElement {
         this._settingsUpdatedListener = (event, settings) => {
             console.log('[SettingsView] Received settings-updated');
             this.settings = settings;
+            if (settings?.language) {
+                this.appLanguage = settings.language;
+            }
             this.requestUpdate();
         };
 
@@ -1249,6 +1305,13 @@ export class SettingsView extends LitElement {
                                               >
                                                   ✓ Ollama is running
                                               </div>
+                                              ${this.apiKeys.ollama !== 'local'
+                                                  ? html`
+                                                        <button class="settings-button full-width" @click=${() => this.handleSaveKey(id)}>
+                                                            Connect Ollama to Glass
+                                                        </button>
+                                                    `
+                                                  : ''}
                                               <button class="settings-button full-width danger" @click=${this.handleOllamaShutdown}>
                                                   Stop Ollama Service
                                               </button>
@@ -1495,6 +1558,25 @@ export class SettingsView extends LitElement {
                 </div>
 
                 <div class="buttons-section">
+                    <div class="language-section">
+                        <span class="language-label">Language (STT &amp; AI responses)</span>
+                        <div class="move-buttons">
+                            <button
+                                class="settings-button half-width ${this.appLanguage === 'en' ? 'selected' : ''}"
+                                @click=${() => this.handleLanguageSelect('en')}
+                                ?disabled=${this.languageSaving}
+                            >
+                                <span>English</span>
+                            </button>
+                            <button
+                                class="settings-button half-width ${this.appLanguage === 'ru' ? 'selected' : ''}"
+                                @click=${() => this.handleLanguageSelect('ru')}
+                                ?disabled=${this.languageSaving}
+                            >
+                                <span>Russian</span>
+                            </button>
+                        </div>
+                    </div>
                     <button class="settings-button full-width" @click=${this.handlePersonalize}>
                         <span>Personalize / Meeting Notes</span>
                     </button>
