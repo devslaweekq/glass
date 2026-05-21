@@ -20,35 +20,6 @@ const SESSION_RENEW_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 // miss any packets at the exact swap moment.
 const SOCKET_OVERLAP_MS = 2 * 1000; // 2 seconds
 
-const WHISPER_NOISE_PATTERNS = [
-    '[BLANK_AUDIO]',
-    '[INAUDIBLE]',
-    '[MUSIC]',
-    '[SOUND]',
-    '[NOISE]',
-    '(BLANK_AUDIO)',
-    '(INAUDIBLE)',
-    '(MUSIC)',
-    '(SOUND)',
-    '(NOISE)',
-    '[Музыка]',
-    '[музыка]',
-    'ДИНАМИЧНАЯ МУЗЫКА',
-    'Динамичная музыка',
-];
-
-function isWhisperNoiseTranscript(text) {
-    const normalized = text.trim();
-    if (!normalized || normalized.length <= 2) return true;
-    if (WHISPER_NOISE_PATTERNS.some((pattern) => normalized.includes(pattern) || normalized === pattern)) {
-        return true;
-    }
-    if (/^\(.*\)$/i.test(normalized) && /bell|music|sound|noise|музык/i.test(normalized)) {
-        return true;
-    }
-    return false;
-}
-
 class SttService {
     constructor() {
         this.mySttSession = null;
