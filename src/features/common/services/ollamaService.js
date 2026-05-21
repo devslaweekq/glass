@@ -874,7 +874,12 @@ class OllamaService extends EventEmitter {
                     try {
                         const isLoaded = loadedModels.includes(model.name);
                         // DB에는 installed 상태만 저장, loaded 상태는 메모리에서 관리
-                        await ollamaModelRepository.updateInstallStatus(model.name, true, false);
+                        await ollamaModelRepository.upsertModel({
+                            name: model.name,
+                            size: String(model.size ?? ''),
+                            installed: true,
+                            installing: false,
+                        });
 
                         // 로드 상태를 인스턴스 변수에 저장
                         if (!this.modelLoadStatus) {

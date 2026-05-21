@@ -223,6 +223,10 @@ class ModelStateService extends EventEmitter {
         const existingSettings = (await providerSettingsRepository.getByProvider(provider)) || {};
         await providerSettingsRepository.upsert(provider, { ...existingSettings, api_key: finalKey });
 
+        if (provider === 'ollama') {
+            await this._syncOllamaModelsFromApi();
+        }
+
         // 키가 추가/변경되었으므로, 해당 provider의 모델을 자동 선택할 수 있는지 확인
         await this._autoSelectAvailableModels([]);
 
@@ -303,7 +307,34 @@ class ModelStateService extends EventEmitter {
         };
     }
 
+    async _syncOllamaModelsFromApi() {
+        const ollamaService = require('./ollamaService');
+        if (!(await ollamaService.isServiceRunning())) {
+            return [];
+        }
+
+        const models = await ollamaService.getInstalledModels();
+        for (const model of models) {
+            const name = model.name || model.model;
+            if (!name) continue;
+            ollamaModelRepository.upsertModel({
+                name,
+                size: String(model.size ?? ''),
+                installed: true,
+                installing: false,
+            });
+        }
+        return models;
+    }
+
     async setSelectedModel(type, modelId) {
+        if (type === 'llm') {
+            const ollamaSetting = await providerSettingsRepository.getByProvider('ollama');
+            if (ollamaSetting?.api_key) {
+                await this._syncOllamaModelsFromApi();
+            }
+        }
+
         const provider = this.getProviderForModel(modelId, type);
         if (!provider) {
             console.warn(`[ModelStateService] No provider found for model ${modelId}`);
@@ -345,6 +376,7 @@ class ModelStateService extends EventEmitter {
 
             const providerId = setting.provider;
             if (providerId === 'ollama' && type === 'llm') {
+                await this._syncOllamaModelsFromApi();
                 const installed = ollamaModelRepository.getInstalledModels();
                 available.push(...installed.map((m) => ({ id: m.name, name: m.name })));
             } else if (PROVIDERS[providerId]?.[modelListKey]) {
