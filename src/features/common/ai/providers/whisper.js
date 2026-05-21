@@ -14,7 +14,7 @@ if (typeof window === 'undefined') {
 }
 
 class WhisperSTTSession extends EventEmitter {
-    constructor(model, whisperService, sessionId) {
+    constructor(model, whisperService, sessionId, language = 'en') {
         super();
         this.model = model;
         this.whisperService = whisperService;

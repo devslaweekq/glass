@@ -623,7 +623,7 @@ class WhisperService extends EventEmitter {
 
     async installWindows() {
         console.log('[WhisperService] Installing Whisper on Windows...');
-        const version = 'v1.7.6';
+        const version = 'v1.8.4';
         const binaryUrl = `https://github.com/ggml-org/whisper.cpp/releases/download/${version}/whisper-bin-x64.zip`;
         const tempFile = path.join(this.tempDir, 'whisper-binary.zip');
 
@@ -701,7 +701,15 @@ class WhisperService extends EventEmitter {
                 if (item.isDirectory()) {
                     const subExecutables = await this.findWhisperExecutables(fullPath);
                     executables.push(...subExecutables);
-                } else if (item.isFile() && (item.name === 'whisper-whisper.exe' || item.name === 'whisper.exe' || item.name === 'main.exe')) {
+                } else if (
+                    item.isFile() &&
+                    (item.name === 'whisper-whisper.exe' ||
+                        item.name === 'whisper.exe' ||
+                        item.name === 'main.exe' ||
+                        item.name === 'whisper-cli' ||
+                        item.name === 'whisper' ||
+                        item.name === 'main')
+                ) {
                     executables.push(fullPath);
                 }
             }
@@ -733,23 +741,99 @@ class WhisperService extends EventEmitter {
         }
     }
 
-    async installLinux() {
-        console.log('[WhisperService] Installing Whisper on Linux...');
-        const version = 'v1.7.6';
-        const binaryUrl = `https://github.com/ggml-org/whisper.cpp/releases/download/${version}/whisper-cpp-${version}-linux-x64.tar.gz`;
-        const tempFile = path.join(this.tempDir, 'whisper-binary.tar.gz');
+    async tryInstallLinuxSystemPackage() {
+        const existingCli = (await this.checkCommand('whisper-cli')) || (await this.checkCommand('whisper'));
+        if (existingCli) {
+            this.whisperPath = existingCli;
+            console.log(`[WhisperService] Found system whisper at: ${existingCli}`);
+            return true;
+        }
+
+        const aptGet = await this.checkCommand('apt');
+        if (!aptGet) {
+            return false;
+        }
 
         try {
-            await this.downloadWithRetry(binaryUrl, tempFile);
-            const extractDir = path.dirname(this.whisperPath);
-            await spawnAsync('tar', ['-xzf', tempFile, '-C', extractDir, '--strip-components=1']);
-            await spawnAsync('chmod', ['+x', this.whisperPath]);
-            await fsPromises.unlink(tempFile);
-            console.log('[WhisperService] Whisper installed successfully on Linux');
+            console.log('[WhisperService] Trying apt package whisper.cpp...');
+            await spawnAsync('apt', ['install', '-y', 'whisper.cpp'], {
+                env: { ...process.env, DEBIAN_FRONTEND: 'noninteractive' },
+            });
+        } catch (error) {
+            console.log('[WhisperService] apt install skipped or failed:', error.message);
+            return false;
+        }
+
+        const whisperCliPath = (await this.checkCommand('whisper-cli')) || (await this.checkCommand('whisper'));
+        if (whisperCliPath) {
+            this.whisperPath = whisperCliPath;
+            console.log(`[WhisperService] Installed via apt at: ${whisperCliPath}`);
             return true;
+        }
+
+        return false;
+    }
+
+    async installLinuxFromSource(version) {
+        // v1.8.4+ releases ship Windows/macOS zips only — no linux-x64 tarball on GitHub
+        const sourceUrl = `https://github.com/ggml-org/whisper.cpp/archive/refs/tags/${version}.tar.gz`;
+        const tarballPath = path.join(this.tempDir, 'whisper-src.tar.gz');
+        const extractRoot = path.join(this.tempDir, 'whisper-src');
+        const srcDir = path.join(extractRoot, `whisper.cpp-${version.slice(1)}`);
+        const builtCli = path.join(srcDir, 'build', 'bin', 'whisper-cli');
+
+        const cmake = await this.checkCommand('cmake');
+        const cxx = (await this.checkCommand('g++')) || (await this.checkCommand('c++'));
+        if (!cmake || !cxx) {
+            throw new Error('Build tools missing. Install with: sudo apt install -y cmake build-essential whisper.cpp');
+        }
+
+        console.log(`[WhisperService] Building whisper.cpp ${version} from source...`);
+        await this.downloadWithRetry(sourceUrl, tarballPath);
+        await fsPromises.mkdir(extractRoot, { recursive: true });
+        await spawnAsync('tar', ['-xzf', tarballPath, '-C', extractRoot]);
+
+        const jobs = String(Math.max(1, os.cpus().length));
+        await spawnAsync('cmake', ['-B', 'build', '-DCMAKE_BUILD_TYPE=Release'], { cwd: srcDir });
+        await spawnAsync('cmake', ['--build', 'build', '--config', 'Release', '-j', jobs], { cwd: srcDir });
+
+        let sourceCli = builtCli;
+        try {
+            await fsPromises.access(builtCli, fs.constants.X_OK);
+        } catch {
+            const found = await this.findWhisperExecutables(path.join(srcDir, 'build'));
+            if (found.length === 0) {
+                throw new Error('whisper-cli not found after source build');
+            }
+            sourceCli = found[0];
+        }
+
+        const targetDir = path.dirname(this.whisperPath);
+        await fsPromises.mkdir(targetDir, { recursive: true });
+        await fsPromises.copyFile(sourceCli, this.whisperPath);
+        await spawnAsync('chmod', ['+x', this.whisperPath]);
+        await spawnAsync(this.whisperPath, ['--help']);
+
+        await fsPromises.unlink(tarballPath).catch(() => {});
+        await this.removeDirectory(extractRoot).catch(() => {});
+
+        console.log(`[WhisperService] Built and installed whisper-cli at: ${this.whisperPath}`);
+        return true;
+    }
+
+    async installLinux() {
+        console.log('[WhisperService] Installing Whisper on Linux...');
+        const version = 'v1.8.4';
+
+        try {
+            if (await this.tryInstallLinuxSystemPackage()) {
+                return true;
+            }
+
+            return await this.installLinuxFromSource(version);
         } catch (error) {
             console.error('[WhisperService] Linux installation failed:', error);
-            throw new Error(`Failed to install Whisper on Linux: ${error.message}`);
+            throw new Error(`Failed to install Whisper on Linux: ${error.message}. ` + 'You can also run: sudo apt install -y whisper.cpp');
         }
     }
 
